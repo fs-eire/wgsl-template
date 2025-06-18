@@ -13,6 +13,7 @@ export interface TestConfig {
   type: "loader" | "parser" | "e2e";
   description?: string; // Optional description of what the test does
   disabled?: boolean | string; // Optional: true/false or reason why disabled
+  expectsError?: boolean | string; // Optional: true if test should throw an error, or expected error message pattern
   mainTemplate?: string; // for parser and e2e tests
   generatorOptions?: GeneratorOptions; // for e2e tests
   expectedOutputFile?: string; // for e2e tests

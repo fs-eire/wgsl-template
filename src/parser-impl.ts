@@ -74,7 +74,7 @@ function parsePreprocessorIncludeDirectives(
   const currentState = parseState.get(currentFile);
 
   if (!currentState) {
-    throw new Error(`File ${currentFile} not found in parse state`);
+    throw new Error(`File "${currentFile}" not found in parse state`);
   }
 
   if (currentState.includeProcessed) {
@@ -105,7 +105,7 @@ function parsePreprocessorIncludeDirectives(
       }
       if (!parseState.has(includePath)) {
         throw new Error(
-          `File ${includePath} not found in parse state for #include directive in file ${currentFile} at line ${
+          `File "${includePath}" not found in parse state for #include directive in file "${currentFile}" at line ${
             lineNumber + 1
           }`
         );
