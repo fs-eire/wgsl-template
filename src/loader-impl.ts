@@ -1,11 +1,7 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
 
-import type {
-  Loader,
-  LoadFromDirectoryOptions,
-  TemplateRepository,
-} from "./types/loader";
+import type { Loader, LoadFromDirectoryOptions, TemplateRepository } from "./types/loader";
 import type { TemplatePass0 } from "./types/template";
 
 /**
@@ -38,9 +34,7 @@ async function loadTemplatesRecursively(
       }
     }
   } catch (error) {
-    throw new Error(
-      `Error scanning directory ${directory}: ${(error as Error).message}`
-    );
+    throw new Error(`Error scanning directory ${directory}: ${(error as Error).message}`);
   }
 }
 /**
@@ -70,9 +64,7 @@ async function loadTemplateFile(
 
     templates.set(templateName, template);
   } catch (error) {
-    throw new Error(
-      `Error loading template file ${filePath}: ${(error as Error).message}`
-    );
+    throw new Error(`Error loading template file ${filePath}: ${(error as Error).message}`);
   }
 }
 
@@ -103,10 +95,8 @@ export const loader: Loader = {
         throw new Error(`Path ${directory} is not a directory`);
       }
     } catch (error) {
-      throw new Error(
-        `Cannot access directory ${directory}: ${(error as Error).message}`
-      );
-    }    // Recursively load template files
+      throw new Error(`Cannot access directory ${directory}: ${(error as Error).message}`);
+    } // Recursively load template files
     await loadTemplatesRecursively(directory, directory, ext, templates);
 
     return {

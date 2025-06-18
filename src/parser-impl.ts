@@ -34,11 +34,7 @@ function parseComments(raw: readonly string[]): string[] {
           break;
         }
         // Check for start of multi-line comment
-        else if (
-          i < line.length - 1 &&
-          line[i] === "/" &&
-          line[i + 1] === "*"
-        ) {
+        else if (i < line.length - 1 && line[i] === "/" && line[i + 1] === "*") {
           inMultiLineComment = true;
           i += 2; // Skip '/*'
         } else {
@@ -86,11 +82,7 @@ function parsePreprocessorIncludeDirectives(
     return;
   }
 
-  for (
-    let lineNumber = 0;
-    lineNumber < currentState.lines.length;
-    lineNumber++
-  ) {
+  for (let lineNumber = 0; lineNumber < currentState.lines.length; lineNumber++) {
     const line = currentState.lines[lineNumber];
     // Process each line and extract include directives
     const includeMatch = line.match(/^#include\s+(.+)$/);
@@ -144,9 +136,7 @@ export const parser: Parser = {
    * @param filePath The path to the template file to parse
    * @param repo The repository containing raw template data
    * @returns A new repository with parsed segments added to the specified template
-   */ parse(
-    repo: TemplateRepository<TemplatePass0>
-  ): TemplateRepository<TemplatePass1> {
+   */ parse(repo: TemplateRepository<TemplatePass0>): TemplateRepository<TemplatePass1> {
     const pass1Repo: Map<string, TemplatePass1> = new Map();
 
     const parseState: Map<

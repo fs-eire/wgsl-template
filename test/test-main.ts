@@ -20,25 +20,21 @@ async function discoverTestCases(testCasesDir: string, includeDisabled: boolean 
 
     for (const entry of entries) {
       const testCaseDir = path.join(testCasesDir, entry);
-      const entryStat = await stat(testCaseDir);      if (entryStat.isDirectory()) {
+      const entryStat = await stat(testCaseDir);
+      if (entryStat.isDirectory()) {
         try {
           const testCase = await loadTestCase(entry, testCaseDir);
-            // Check if test is disabled
+          // Check if test is disabled
           if (testCase.config.disabled && !includeDisabled) {
-            const reason = typeof testCase.config.disabled === 'string' 
-              ? testCase.config.disabled 
-              : 'no reason specified';
+            const reason =
+              typeof testCase.config.disabled === "string" ? testCase.config.disabled : "no reason specified";
             console.log(`⏭️  Skipping disabled test "${entry}": ${reason}`);
             continue;
           }
-          
+
           testCases.push(testCase);
         } catch (error) {
-          console.warn(
-            `⚠️  Failed to load test case "${entry}": ${
-              (error as Error).message
-            }`
-          );
+          console.warn(`⚠️  Failed to load test case "${entry}": ${(error as Error).message}`);
         }
       }
     }
@@ -49,10 +45,7 @@ async function discoverTestCases(testCasesDir: string, includeDisabled: boolean 
   return testCases;
 }
 
-async function loadTestCase(
-  name: string,
-  directory: string
-): Promise<TestCase> {
+async function loadTestCase(name: string, directory: string): Promise<TestCase> {
   // Load test configuration
   const configPath = path.join(directory, "test-config.json");
   let config: TestConfig;
@@ -76,14 +69,9 @@ async function loadTestCase(
   let expectedOutput: string | undefined;
   if (config.expectedOutputFile) {
     try {
-      expectedOutput = await readFile(
-        path.join(directory, config.expectedOutputFile),
-        "utf8"
-      );
+      expectedOutput = await readFile(path.join(directory, config.expectedOutputFile), "utf8");
     } catch (error) {
-      console.warn(
-        `⚠️  Could not load expected output file: ${(error as Error).message}`
-      );
+      console.warn(`⚠️  Could not load expected output file: ${(error as Error).message}`);
     }
   }
 
@@ -121,19 +109,19 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
 // Command line argument parsing
 function parseCommandLineArgs(): { testCase?: string; help?: boolean; debug?: boolean } {
   const argv = minimist(process.argv.slice(2), {
-    string: ['case', 'c'],
-    boolean: ['help', 'h', 'debug', 'd'],
+    string: ["case", "c"],
+    boolean: ["help", "h", "debug", "d"],
     alias: {
-      c: 'case',
-      h: 'help',
-      d: 'debug'
-    }
+      c: "case",
+      h: "help",
+      d: "debug",
+    },
   });
 
   return {
     testCase: argv.case || argv.c,
     help: argv.help || argv.h,
-    debug: argv.debug || argv.d
+    debug: argv.debug || argv.d,
   };
 }
 
@@ -147,28 +135,27 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
     // First try to find the test case (including disabled ones)
     const allTestCases = await discoverTestCases(testCasesDir, true);
     const foundTestCase = allTestCases.find((tc) => tc.name === specificTestCase);
-    
+
     if (!foundTestCase) {
       console.log(`❌ Test case "${specificTestCase}" not found!`);
       console.log("Available test cases:");
       allTestCases.forEach((tc) => {
-        const disabledInfo = tc.config.disabled 
-          ? ` (disabled: ${typeof tc.config.disabled === 'string' ? tc.config.disabled : 'no reason'})`
-          : '';
+        const disabledInfo = tc.config.disabled
+          ? ` (disabled: ${typeof tc.config.disabled === "string" ? tc.config.disabled : "no reason"})`
+          : "";
         console.log(`  - ${tc.name}${disabledInfo}`);
       });
       process.exit(1);
     }
-    
+
     // Check if the found test case is disabled
     if (foundTestCase.config.disabled) {
-      const reason = typeof foundTestCase.config.disabled === 'string' 
-        ? foundTestCase.config.disabled 
-        : 'no reason specified';
+      const reason =
+        typeof foundTestCase.config.disabled === "string" ? foundTestCase.config.disabled : "no reason specified";
       console.log(`❌ Cannot run disabled test case "${specificTestCase}": ${reason}`);
       process.exit(1);
     }
-    
+
     testCases = [foundTestCase];
     console.log(`🎯 Running specific test case: ${specificTestCase}`);
   }
@@ -218,7 +205,8 @@ export { TestCase, TestConfig, TestResult } from "./test-types";
 export { assertEquals, assertContains, assertNotContains } from "./test-utils";
 
 // Run tests if this file is executed directly
-if (require.main === module) {  const { testCase, help, debug } = parseCommandLineArgs();
+if (require.main === module) {
+  const { testCase, help, debug } = parseCommandLineArgs();
 
   if (help) {
     console.log(`

@@ -5,7 +5,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "test": "ts-node test/test-main.ts"
+    "test": "ts-node test/test-main.ts",
+    "format": "prettier --write ."
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
     "@types/minimist": "^1.2.5",
     "@types/node": "^24.0.1",
     "minimist": "^1.2.8",
+    "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }

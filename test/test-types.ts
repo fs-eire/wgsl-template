@@ -16,10 +16,12 @@ export interface TestConfig {
   mainTemplate?: string; // for parser and e2e tests
   generatorOptions?: GeneratorOptions; // for e2e tests
   expectedOutputFile?: string; // for e2e tests
-  loaderOptions?: { // for loader tests
+  loaderOptions?: {
+    // for loader tests
     ext?: string;
   };
-  expectedFiles?: Array<{ // for loader tests
+  expectedFiles?: Array<{
+    // for loader tests
     path: string;
     content: string[];
   }>;

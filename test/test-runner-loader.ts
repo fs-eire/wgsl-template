@@ -5,10 +5,7 @@ import { inspect } from "node:util";
 
 export async function runLoaderTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
   // Step 1: Load templates using the loader with custom options
-  const repo = await loader.loadFromDirectory(
-    testCase.directory,
-    testCase.config.loaderOptions
-  );
+  const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
 
   if (debug) {
     console.log(`   🐛 Debug - Loaded repository:`);
@@ -36,11 +33,7 @@ export async function runLoaderTest(testCase: TestCase, debug?: boolean): Promis
       }
 
       for (let i = 0; i < actualLines.length; i++) {
-        assertEquals(
-          actualLines[i],
-          expectedLines[i],
-          `Line ${i + 1} mismatch in ${expectedFile.path}`
-        );
+        assertEquals(actualLines[i], expectedLines[i], `Line ${i + 1} mismatch in ${expectedFile.path}`);
       }
     }
   }

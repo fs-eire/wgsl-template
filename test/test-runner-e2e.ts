@@ -30,19 +30,11 @@ export async function runE2ETest(testCase: TestCase, debug?: boolean): Promise<T
 
   // Step 3: Generate output
   const templateKey = path.basename(testCase.config.mainTemplate);
-  const output = generator.generate(
-    templateKey,
-    parsedRepo,
-    testCase.config.generatorOptions
-  );
+  const output = generator.generate(templateKey, parsedRepo, testCase.config.generatorOptions);
 
   // Step 4: Check result
   if (testCase.expectedOutput) {
-    assertEquals(
-      output.trim(),
-      testCase.expectedOutput.trim(),
-      `Output mismatch for test case "${testCase.name}"`
-    );
+    assertEquals(output.trim(), testCase.expectedOutput.trim(), `Output mismatch for test case "${testCase.name}"`);
   }
 
   return {

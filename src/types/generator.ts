@@ -20,9 +20,5 @@ export interface GeneratorOptions {
 }
 
 export interface Generator {
-  generate(
-    filePath: string,
-    repo: TemplateRepository<TemplatePass1>,
-    options: GeneratorOptions
-  ): string;
+  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, options: GeneratorOptions): string;
 }

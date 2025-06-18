@@ -18,8 +18,5 @@ export interface LoadFromDirectoryOptions {
 }
 
 export interface Loader {
-  loadFromDirectory(
-    directory: string,
-    options?: LoadFromDirectoryOptions
-  ): Promise<TemplateRepository<TemplatePass0>>;
+  loadFromDirectory(directory: string, options?: LoadFromDirectoryOptions): Promise<TemplateRepository<TemplatePass0>>;
 }

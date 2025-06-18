@@ -8,10 +8,7 @@ import { type TestCase, type TestResult } from "./test-types";
 
 export async function runParserTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
   // Step 1: Load templates
-  const repo = await loader.loadFromDirectory(
-    testCase.directory,
-    testCase.config.loaderOptions
-  );
+  const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
 
   if (debug) {
     console.log(`   🐛 Debug - Loaded repository:`);
@@ -29,7 +26,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
   // Step 3: For each template file, validate that a corresponding .pass1 file exists and matches
   for (const [templateKey, template] of parsedRepo.templates) {
     const expectedResultPath = path.join(testCase.directory, `${templateKey}.pass1`);
-    
+
     // Check if the expected result file exists
     let expectedContent: string;
     try {
@@ -50,11 +47,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
     }
 
     for (let i = 0; i < actualLines.length; i++) {
-      assertEquals(
-        String(actualLines[i]),
-        expectedLines[i],
-        `Line ${i + 1} mismatch in ${templateKey}`
-      );
+      assertEquals(String(actualLines[i]), expectedLines[i], `Line ${i + 1} mismatch in ${templateKey}`);
     }
   }
 

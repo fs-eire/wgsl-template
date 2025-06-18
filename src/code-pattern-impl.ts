@@ -7,10 +7,7 @@ export const DEFAULT_PATTERNS: CodePattern[] = [
 ];
 
 const PATTERN_MAP: Map<string, CodePattern> = new Map([
-  [
-    "guardAgainstOutOfBoundsWorkgroupSizes",
-    { type: "macro", pattern: /\bguardAgainstOutOfBoundsWorkgroupSizes\b/ },
-  ],
+  ["guardAgainstOutOfBoundsWorkgroupSizes", { type: "macro", pattern: /\bguardAgainstOutOfBoundsWorkgroupSizes\b/ }],
   ["getElementAt", { type: "macro", pattern: /\bgetElementAt\b/ }],
 
   [

@@ -1,25 +1,14 @@
 import { dynamicCodeGenerator } from "./code-generator-dynamic-impl";
 import { staticCodeGenerator } from "./code-generator-static-impl";
-import {
-  createParamPattern,
-  DEFAULT_PATTERNS,
-  lookupPattern,
-} from "./code-pattern-impl";
+import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl";
 
 import type { CodeGenerator } from "./types/code-generator";
 import type { CodePattern } from "./types/code-pattern";
-import type {
-  Generator,
-  GeneratorOptions,
-  GeneratorOptionsParam,
-  GeneratorOptionsTarget,
-} from "./types/generator";
+import type { Generator, GeneratorOptions, GeneratorOptionsParam, GeneratorOptionsTarget } from "./types/generator";
 import type { TemplateRepository } from "./types/loader";
 import type { TemplatePass1, TemplateOutput } from "./types/template";
 
-function resolveSegmentGenerator(
-  generator: GeneratorOptionsTarget
-): CodeGenerator {
+function resolveSegmentGenerator(generator: GeneratorOptionsTarget): CodeGenerator {
   switch (generator) {
     case "ort-static":
       return staticCodeGenerator;
@@ -72,10 +61,7 @@ function matchNextPattern(
   } | null = null;
 
   for (const pattern of patterns) {
-    const regex =
-      typeof pattern.pattern === "string"
-        ? new RegExp(pattern.pattern)
-        : pattern.pattern;
+    const regex = typeof pattern.pattern === "string" ? new RegExp(pattern.pattern) : pattern.pattern;
     const match = regex.exec(content);
     if (match && match.index !== undefined) {
       // If this is the first match, or if this match occurs earlier than the current earliest
@@ -108,10 +94,7 @@ function generatePreProcessorExpression(
       output += condition.slice(i, i + next.index);
     }
     // Process the matched pattern
-    const matched = condition.slice(
-      i + next.index,
-      i + next.index + next.length
-    );
+    const matched = condition.slice(i + next.index, i + next.index + next.length);
 
     i += next.index + next.length;
 
@@ -136,11 +119,7 @@ function generatePreProcessorExpression(
 }
 
 export const generator: Generator = {
-  generate(
-    filePath: string,
-    repo: TemplateRepository<TemplatePass1>,
-    options: GeneratorOptions
-  ): string {
+  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, options: GeneratorOptions): string {
     const pass1 = repo.templates.get(filePath)?.pass1;
     if (!pass1) {
       throw new Error(`Template not found for file: ${filePath}`);
@@ -162,17 +141,11 @@ export const generator: Generator = {
     generateImpl(generatorState);
 
     if (generatorState.preprocessIfStack.length > 0) {
-      throw new Error(
-        `Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(
-          ", "
-        )}`
-      );
+      throw new Error(`Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(", ")}`);
     }
     if (generatorState.currentFunctionCall.length > 0) {
       throw new Error(
-        `Unclosed function call: ${generatorState.currentFunctionCall
-          .map((call) => call.name)
-          .join(", ")}`
+        `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
       );
     }
     return generatorState.result;
@@ -227,30 +200,18 @@ function generateImpl({
         for (const param of params) {
           const pattern = createParamPattern(param);
           if (
-            patterns
-              .filter((p) => p.type === "param")
-              .some((p) => p.pattern.toString() === pattern.pattern.toString())
+            patterns.filter((p) => p.type === "param").some((p) => p.pattern.toString() === pattern.pattern.toString())
           ) {
-            throw new Error(
-              `Duplicate param: ${param} at line ${currentLine + 1}`
-            );
+            throw new Error(`Duplicate param: ${param} at line ${currentLine + 1}`);
           }
           patterns.push(pattern);
         }
       } else if (line.startsWith("#if ")) {
         if (currentFunctionCall.length > 0) {
-          throw new Error(
-            `Preprocessor directive inside function call at line ${
-              currentLine + 1
-            }`
-          );
+          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
         const condition = line.slice(4).trim();
-        const expression = generatePreProcessorExpression(
-          condition,
-          codeGenerator,
-          patterns
-        );
+        const expression = generatePreProcessorExpression(condition, codeGenerator, patterns);
         preprocessIfStack.push("if");
         output("if (");
         output(codeGenerator.emitPreprocessorExpressionMacro(expression));
@@ -264,19 +225,11 @@ function generateImpl({
           throw new Error(`#elif mismatch at line ${currentLine + 1}`);
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(
-            `Preprocessor directive inside function call at line ${
-              currentLine + 1
-            }`
-          );
+          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
         preprocessIfStack[preprocessIfStack.length - 1] = "elif";
         const condition = line.slice(6).trim();
-        const expression = generatePreProcessorExpression(
-          condition,
-          codeGenerator,
-          patterns
-        );
+        const expression = generatePreProcessorExpression(condition, codeGenerator, patterns);
         output("} else if (");
         output(codeGenerator.emitPreprocessorExpressionMacro(expression));
         output(") {\n");
@@ -289,11 +242,7 @@ function generateImpl({
           throw new Error(`#else mismatch at line ${currentLine + 1}`);
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(
-            `Preprocessor directive inside function call at line ${
-              currentLine + 1
-            }`
-          );
+          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
         preprocessIfStack[preprocessIfStack.length - 1] = "else";
         output("} else {\n");
@@ -302,11 +251,7 @@ function generateImpl({
           throw new Error(`#endif mismatch at line ${currentLine + 1}`);
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(
-            `Preprocessor directive inside function call at line ${
-              currentLine + 1
-            }`
-          );
+          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
         output("}\n");
         preprocessIfStack.pop();
@@ -321,10 +266,7 @@ function generateImpl({
           output(line.slice(currentColumn, currentColumn + next.index));
         }
         // Process the matched pattern
-        const matched = line.slice(
-          currentColumn + next.index,
-          currentColumn + next.index + next.length
-        );
+        const matched = line.slice(currentColumn + next.index, currentColumn + next.index + next.length);
 
         currentColumn += next.index + next.length;
 
@@ -335,16 +277,11 @@ function generateImpl({
             } else if (matched === ")") {
               currentParenthesesState--;
               if (currentParenthesesState < 0) {
-                throw new Error(
-                  `Unmatched closing parenthesis at line ${
-                    currentLine + 1
-                  }, column ${currentColumn}`
-                );
+                throw new Error(`Unmatched closing parenthesis at line ${currentLine + 1}, column ${currentColumn}`);
               }
               if (
                 currentFunctionCall.length > 0 &&
-                currentFunctionCall[currentFunctionCall.length - 1]
-                  .parenthesesState === currentParenthesesState
+                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState === currentParenthesesState
               ) {
                 // End of function call
                 const call = currentFunctionCall.pop();

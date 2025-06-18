@@ -4,16 +4,10 @@
   "expectedFiles": [
     {
       "path": "compute.wgsl.template",
-      "content": [
-        "// First template file",
-        "fn compute_main() {",
-        "    var input_index = i32(global_id.x);",
-        "}",
-        ""
-      ]
+      "content": ["// First template file", "fn compute_main() {", "    var input_index = i32(global_id.x);", "}", ""]
     },
     {
-      "path": "utils.wgsl.template", 
+      "path": "utils.wgsl.template",
       "content": [
         "// Utility functions",
         "fn add(a: f32, b: f32) -> f32 {",

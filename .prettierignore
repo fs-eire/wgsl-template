@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+lib/
+*.d.ts
+
+# Test files (preserve original formatting for test data)
+test/testcases/**/*.wgsl.*
+
+# Generated files
+*.log
+.DS_Store
