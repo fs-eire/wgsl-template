@@ -1,5 +1,5 @@
 import type { TemplateRepository } from "./loader";
-import type { TemplatePass1, TemplateOutput } from "./template";
+import type { TemplatePass1 } from "./template";
 
 export type GeneratorOptionsTarget = "ort-static" | "ort-dynamic";
 

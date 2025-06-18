@@ -1,12 +1,12 @@
-import { dynamicCodeGenerator } from "./code-generator-dynamic-impl";
-import { staticCodeGenerator } from "./code-generator-static-impl";
-import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl";
+import { dynamicCodeGenerator } from "./code-generator-dynamic-impl.js";
+import { staticCodeGenerator } from "./code-generator-static-impl.js";
+import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl.js";
 
-import type { CodeGenerator } from "./types/code-generator";
-import type { CodePattern } from "./types/code-pattern";
-import type { Generator, GeneratorOptions, GeneratorOptionsParam, GeneratorOptionsTarget } from "./types/generator";
-import type { TemplateRepository } from "./types/loader";
-import type { TemplatePass1, TemplateOutput } from "./types/template";
+import type { CodeGenerator } from "./types/code-generator.js";
+import type { CodePattern } from "./types/code-pattern.js";
+import type { Generator, GeneratorOptions, GeneratorOptionsParam, GeneratorOptionsTarget } from "./types/generator.js";
+import type { TemplateRepository } from "./types/loader.js";
+import type { TemplatePass1 } from "./types/template.js";
 
 function resolveSegmentGenerator(generator: GeneratorOptionsTarget): CodeGenerator {
   switch (generator) {
@@ -152,23 +152,25 @@ export const generator: Generator = {
   },
 };
 
-function generateImpl({
-  pass1,
-  optionParams,
-  codeGenerator,
-  currentLine,
-  currentColumn,
-  preprocessIfStack,
-  patterns,
-  currentFunctionCall,
-  currentParenthesesState,
-  result,
-}: GeneratorState) {
+function generateImpl(generatorState: GeneratorState) {
+  const {
+    pass1,
+    //optionParams,
+    codeGenerator,
+    preprocessIfStack,
+    patterns,
+    currentFunctionCall,
+  } = generatorState;
+
+  let currentLine = generatorState.currentLine;
+  let currentColumn = generatorState.currentColumn;
+  let currentParenthesesState = generatorState.currentParenthesesState;
+
   const output = (s: string) => {
     if (currentFunctionCall.length > 0) {
       currentFunctionCall[currentFunctionCall.length - 1].currentParam += s;
     } else {
-      result += s;
+      generatorState.result += s;
     }
   };
 

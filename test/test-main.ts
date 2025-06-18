@@ -1,15 +1,14 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
-import { inspect } from "node:util";
+import { pathToFileURL, fileURLToPath } from "node:url";
 import minimist from "minimist";
 
-// Import test framework types and utilities
-import { TestCase, TestConfig, TestResult } from "./test-types";
+import type { TestCase, TestConfig, TestResult } from "./test-types.js";
 
 // Import test runners
-import { runLoaderTest } from "./test-runner-loader";
-import { runParserTest } from "./test-runner-parser";
-import { runE2ETest } from "./test-runner-e2e";
+import { runLoaderTest } from "./test-runner-loader.js";
+import { runParserTest } from "./test-runner-parser.js";
+import { runE2ETest } from "./test-runner-e2e.js";
 
 // Test case discovery
 async function discoverTestCases(testCasesDir: string, includeDisabled: boolean = false): Promise<TestCase[]> {
@@ -95,7 +94,7 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
       case "e2e":
         return await runE2ETest(testCase, debug);
       default:
-        throw new Error(`Unknown test type: ${(testCase.config as any).type}`);
+        throw new Error(`Unknown test type: ${testCase.config.type}`);
     }
   } catch (error) {
     return {
@@ -127,6 +126,7 @@ function parseCommandLineArgs(): { testCase?: string; help?: boolean; debug?: bo
 
 // Test runner
 async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<void> {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const testCasesDir = path.join(__dirname, "testcases");
 
   console.log("🔍 Discovering test cases...");
@@ -200,12 +200,12 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
 }
 
 // Export utilities for individual test cases
-export { TestCase, TestConfig, TestResult } from "./test-types";
+export { TestCase, TestConfig, TestResult } from "./test-types.js";
 
-export { assertEquals, assertContains, assertNotContains } from "./test-utils";
+export { assertEquals, assertContains, assertNotContains } from "./test-utils.js";
 
 // Run tests if this file is executed directly
-if (require.main === module) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { testCase, help, debug } = parseCommandLineArgs();
 
   if (help) {
@@ -230,4 +230,8 @@ Examples:
     console.error("💥 Test runner failed:", error);
     process.exit(1);
   });
+} else {
+  console.log("This module is intended to be run as a script, not imported.");
+  console.log(import.meta.url);
+  console.log(process.argv[1]);
 }

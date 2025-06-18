@@ -1,10 +1,10 @@
 import { readFile } from "node:fs/promises";
 import * as path from "node:path";
 import { inspect } from "node:util";
-import { loader } from "../src/loader-impl";
-import { parser } from "../src/parser-impl";
-import { assertEquals } from "./test-utils";
-import { type TestCase, type TestResult } from "./test-types";
+import { loader } from "../src/loader-impl.js";
+import { parser } from "../src/parser-impl.js";
+import { assertEquals } from "./test-utils.js";
+import { type TestCase, type TestResult } from "./test-types.js";
 
 export async function runParserTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
   // Step 1: Load templates
@@ -32,7 +32,9 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
     try {
       expectedContent = await readFile(expectedResultPath, "utf8");
     } catch (error) {
-      throw new Error(`Expected result file not found: ${expectedResultPath} (template key: ${templateKey})`);
+      throw new Error(
+        `Expected result file not found: ${expectedResultPath} (template key: ${templateKey}). Error: ${(error as Error).message}`
+      );
     }
 
     // Parse expected content into lines (normalize line endings)
