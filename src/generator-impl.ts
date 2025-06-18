@@ -139,6 +139,8 @@ function generateImpl(generatorState: GeneratorState) {
         throw new Error(
           `Raw content inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`
         );
+      } else if (type === "code" && content === "\n") {
+        // If we are inside a preprocessor expression, EOL means we are done with this expression
       } else {
         segment.type = "raw"; // Convert to raw if we are inside a preprocessor expression
         currentPreProcessorExpression.push(segment);
@@ -320,8 +322,8 @@ function generateImpl(generatorState: GeneratorState) {
           throw new Error(`Incomplete function call at line ${currentLine + 1}`);
         }
         generatorState.result.push(...currentPreProcessorExpression);
-        output("raw", ") {\n");
         currentPreProcessorExpression = null;
+        output("raw", ") {\n");
       } else if (line.startsWith("#elif ")) {
         if (
           preprocessIfStack.length === 0 ||
@@ -342,8 +344,8 @@ function generateImpl(generatorState: GeneratorState) {
           throw new Error(`Incomplete function call at line ${currentLine + 1}`);
         }
         generatorState.result.push(...currentPreProcessorExpression);
-        output("raw", ") {\n");
         currentPreProcessorExpression = null;
+        output("raw", ") {\n");
       } else if (line.startsWith("#else")) {
         if (
           preprocessIfStack.length === 0 ||

@@ -13,7 +13,7 @@
       "console": "integratedTerminal",
       "sourceMaps": true,
       "cwd": "${workspaceFolder}",
-      "args": ["-c", "generator-param-basic", "-d"],
+      "args": ["-c", "generator-if-basic", "-d"],
       "preLaunchTask": "npm: build"
     }
   ]

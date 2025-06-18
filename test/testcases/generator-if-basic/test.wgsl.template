@@ -1,0 +1,10 @@
+#param ENABLE_FACTOR
+
+fn my_func(value: f32) {
+#if ENABLE_FACTOR
+    return value + 0.1;
+#else
+    let factor = 2.5;
+    return value * factor + 0.1;
+#endif
+}
