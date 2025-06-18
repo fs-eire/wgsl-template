@@ -119,7 +119,7 @@ export const generator: Generator = {
       return acc;
     }, []);
 
-    return codeGenerator.emit(...generatorState.result);
+    return codeGenerator.emit(generatorState.result);
   },
 };
 

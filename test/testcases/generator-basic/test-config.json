@@ -1,6 +1,6 @@
 {
   "type": "generator",
-  "description": "Basic generator test with pre-parsed templates and parameter substitution",
+  "description": "Basic generator test, using the test generator",
   "entries": ["test.wgsl.template"],
-  "target": "ort-static-cpp"
+  "target": "test"
 }

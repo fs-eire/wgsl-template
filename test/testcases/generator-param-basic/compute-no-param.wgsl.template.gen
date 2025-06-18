@@ -1,0 +1,1 @@
+emit("let size = BUFFER_SIZE;\n");

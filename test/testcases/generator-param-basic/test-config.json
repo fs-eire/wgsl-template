@@ -1,0 +1,6 @@
+{
+  "type": "generator",
+  "description": "Test basic parameter substitution in template generation",
+  "entries": ["compute-param.wgsl.template", "compute-no-param.wgsl.template"],
+  "target": "test"
+}

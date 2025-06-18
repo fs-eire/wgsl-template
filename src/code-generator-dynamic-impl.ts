@@ -1,7 +1,7 @@
 import type { CodeGenerator, CodeSegment } from "./types/code-generator";
 
 export const dynamicCodeGenerator: CodeGenerator = {
-  emit: function (..._code: CodeSegment[]): string {
+  emit: function (_code: CodeSegment[]): string {
     throw new Error("Function not implemented.");
   },
   param: function (_name: string): string {

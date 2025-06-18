@@ -8,7 +8,7 @@ export interface CodeSegment {
 
 export interface CodeGenerator {
   // Emit a string as code
-  emit(...code: CodeSegment[]): string;
+  emit(code: CodeSegment[]): string;
 
   // Generate an expression for a parameter
   param(name: string): string;

@@ -1,0 +1,15 @@
+// Utility functions for data processing
+#include "constants.wgsl.template"
+
+fn load_data(index: u32) -> f32 {
+    return f32(index) * SCALE_FACTOR;
+}
+
+fn process_data(value: f32) -> f32 {
+    return value * 2.0 + OFFSET;
+}
+
+fn store_result(index: u32, value: f32) {
+    // Store the computed result
+    // Implementation would depend on actual buffer binding
+}

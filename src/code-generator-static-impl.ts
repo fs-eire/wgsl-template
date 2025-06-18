@@ -20,7 +20,7 @@ const renderParam = (param: CodeSegment[]): string => {
 };
 
 export const staticCodeGenerator: CodeGenerator = {
-  emit: function (...code: CodeSegment[]): string {
+  emit: function (code: CodeSegment[]): string {
     return code
       .map((segment) => {
         switch (segment.type) {

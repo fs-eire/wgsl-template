@@ -169,6 +169,38 @@ export const parser: Parser = {
       });
     }
 
+    // STEP.3. Deal with empty lines:
+    // - Collapse multiple empty lines to single empty line
+    // - Remove heading/trailing empty lines
+    for (const [templateKey, template] of pass1Repo) {
+      const lines = template.pass1;
+      const collapsedLines: string[] = [];
+      let lastLineEmpty = false;
+      for (const line of lines) {
+        const isEmpty = line.trim() === "";
+        if (isEmpty) {
+          if (!lastLineEmpty) {
+            collapsedLines.push(line);
+            lastLineEmpty = true;
+          }
+        } else {
+          collapsedLines.push(line);
+          lastLineEmpty = false;
+        }
+      }
+      // Remove leading/trailing empty lines
+      while (collapsedLines.length > 0 && collapsedLines[0].trim() === "") {
+        collapsedLines.shift();
+      }
+      while (collapsedLines.length > 0 && collapsedLines[collapsedLines.length - 1].trim() === "") {
+        collapsedLines.pop();
+      }
+      pass1Repo.set(templateKey, {
+        filePath: template.filePath,
+        pass1: collapsedLines,
+      });
+    }
+
     return {
       basePath: repo.basePath,
       templates: pass1Repo,
