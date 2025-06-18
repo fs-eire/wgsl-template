@@ -9,6 +9,7 @@ import type { TestCase, TestConfig, TestResult } from "./test-types.js";
 import { runLoaderTest } from "./test-runner-loader.js";
 import { runParserTest } from "./test-runner-parser.js";
 import { runE2ETest } from "./test-runner-e2e.js";
+import { runGeneratorTest } from "./test-runner-generator.js";
 
 // Test case discovery
 async function discoverTestCases(testCasesDir: string, includeDisabled: boolean = false): Promise<TestCase[]> {
@@ -64,21 +65,10 @@ async function loadTestCase(name: string, directory: string): Promise<TestCase> 
     throw new Error("No template files found");
   }
 
-  // Load expected output if specified
-  let expectedOutput: string | undefined;
-  if (config.expectedOutputFile) {
-    try {
-      expectedOutput = await readFile(path.join(directory, config.expectedOutputFile), "utf8");
-    } catch (error) {
-      console.warn(`⚠️  Could not load expected output file: ${(error as Error).message}`);
-    }
-  }
-
   return {
     name,
     directory,
     templateFiles,
-    expectedOutput,
     config,
   };
 }
@@ -93,6 +83,8 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
         return await runParserTest(testCase, debug);
       case "e2e":
         return await runE2ETest(testCase, debug);
+      case "generator":
+        return await runGeneratorTest(testCase, debug);
       default:
         throw new Error(`Unknown test type: ${testCase.config.type}`);
     }
@@ -126,8 +118,21 @@ function parseCommandLineArgs(): { testCase?: string; help?: boolean; debug?: bo
 
 // Test runner
 async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<void> {
-  const __dirname = path.dirname(fileURLToPath(import.meta.url));
-  const testCasesDir = path.join(__dirname, "testcases");
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  // Find project root by looking for package.json
+  let projectRoot = __dirname;
+  while (projectRoot !== path.dirname(projectRoot)) {
+    try {
+      await readFile(path.join(projectRoot, "package.json"), "utf8");
+      break; // Found package.json
+    } catch {
+      projectRoot = path.dirname(projectRoot);
+    }
+  }
+
+  const testCasesDir = path.join(projectRoot, "test", "testcases");
 
   console.log("🔍 Discovering test cases...");
   let testCases = await discoverTestCases(testCasesDir);

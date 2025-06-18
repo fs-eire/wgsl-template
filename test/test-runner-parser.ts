@@ -7,15 +7,15 @@ import { assertEquals } from "./test-utils.js";
 import type { TestCase, TestResult } from "./test-types.js";
 
 export async function runParserTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
+  // Step 1: Load templates
+  const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
+
+  if (debug) {
+    console.log(`   🐛 Debug - Loaded repository:`);
+    console.log(inspect(repo, { depth: null, colors: true }));
+  }
+
   try {
-    // Step 1: Load templates
-    const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
-
-    if (debug) {
-      console.log(`   🐛 Debug - Loaded repository:`);
-      console.log(inspect(repo, { depth: null, colors: true }));
-    }
-
     // Step 2: Parse templates
     const parsedRepo = parser.parse(repo);
 

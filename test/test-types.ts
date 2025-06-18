@@ -1,5 +1,3 @@
-import type { GeneratorOptions } from "../src/types/generator";
-
 // Test framework types
 export interface TestCase {
   name: string;
@@ -10,22 +8,29 @@ export interface TestCase {
 }
 
 export interface TestConfig {
-  type: "loader" | "parser" | "e2e";
+  type: "loader" | "parser" | "e2e" | "generator";
   description?: string; // Optional description of what the test does
   disabled?: boolean | string; // Optional: true/false or reason why disabled
   expectsError?: boolean | string; // Optional: true if test should throw an error, or expected error message pattern
-  mainTemplate?: string; // for parser and e2e tests
-  generatorOptions?: GeneratorOptions; // for e2e tests
-  expectedOutputFile?: string; // for e2e tests
+
+  // For loader tests
   loaderOptions?: {
-    // for loader tests
     ext?: string;
   };
+  // For loader tests
   expectedFiles?: Array<{
-    // for loader tests
     path: string;
     content: string[];
   }>;
+
+  // For generator tests
+  target?: string;
+
+  // For e2e tests
+  params?: Record<string, string | number | boolean>; // Parameters to pass to the generator
+
+  // For e2e and generator tests - list of templates to generate
+  entries?: string[];
 }
 
 export interface TestResult {

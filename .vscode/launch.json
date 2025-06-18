@@ -12,7 +12,9 @@
       "runtimeArgs": ["-r", "ts-node/register"],
       "console": "integratedTerminal",
       "sourceMaps": true,
-      "args": ["-c", "parser-include-basic", "-d"]
+      "cwd": "${workspaceFolder}",
+      "args": ["-c", "generator-basic", "-d"],
+      "preLaunchTask": "npm: build"
     }
   ]
 }

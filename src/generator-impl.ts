@@ -1,35 +1,22 @@
-import { dynamicCodeGenerator } from "./code-generator-dynamic-impl.js";
-import { staticCodeGenerator } from "./code-generator-static-impl.js";
 import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl.js";
 
-import type { CodeGenerator } from "./types/code-generator.js";
+import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
 import type { CodePattern } from "./types/code-pattern.js";
-import type { Generator, GeneratorOptions, GeneratorOptionsParam, GeneratorOptionsTarget } from "./types/generator.js";
+import type { Generator } from "./types/generator.js";
 import type { TemplateRepository } from "./types/loader.js";
 import type { TemplatePass1 } from "./types/template.js";
 
-function resolveSegmentGenerator(generator: GeneratorOptionsTarget): CodeGenerator {
-  switch (generator) {
-    case "ort-static":
-      return staticCodeGenerator;
-    case "ort-dynamic":
-      return dynamicCodeGenerator;
-    default:
-      throw new Error(`Unknown segment generator: ${generator}`);
-  }
-}
-
 interface FunctionCallState {
+  readonly caller?: string; // Optional caller name, if this is a method call
   readonly name: string;
   readonly parenthesesState: number;
-  readonly params: string[];
+  readonly params: CodeSegment[][];
 
-  currentParam: string;
+  currentParam: CodeSegment[];
 }
 
 interface GeneratorState {
   readonly pass1: readonly string[];
-  readonly optionParams: GeneratorOptionsParam[];
   readonly codeGenerator: CodeGenerator;
 
   currentLine: number;
@@ -41,13 +28,18 @@ interface GeneratorState {
   currentFunctionCall: FunctionCallState[];
   currentParenthesesState: number; // 0: no parentheses, >0: nested parentheses count
 
-  result: string;
+  result: CodeSegment[];
 }
 
 function matchNextPattern(
   content: string,
   patterns: CodePattern[]
-): { pattern: CodePattern; index: number; length: number } | null {
+): {
+  pattern: CodePattern;
+  index: number;
+  length: number;
+  indices?: RegExpIndicesArray;
+} | null {
   // Find the pattern that matches earliest in the content
   // example:
   // content is "abcdefg",
@@ -58,10 +50,11 @@ function matchNextPattern(
     pattern: CodePattern;
     index: number;
     length: number;
+    indices?: RegExpIndicesArray;
   } | null = null;
 
   for (const pattern of patterns) {
-    const regex = typeof pattern.pattern === "string" ? new RegExp(pattern.pattern) : pattern.pattern;
+    const regex = typeof pattern.pattern === "string" ? new RegExp(pattern.pattern, "d") : pattern.pattern;
     const match = regex.exec(content);
     if (match && match.index !== undefined) {
       // If this is the first match, or if this match occurs earlier than the current earliest
@@ -70,6 +63,7 @@ function matchNextPattern(
           pattern,
           index: match.index,
           length: match[0].length,
+          indices: match.indices,
         };
       }
     }
@@ -78,48 +72,8 @@ function matchNextPattern(
   return earliestMatch;
 }
 
-function generatePreProcessorExpression(
-  condition: string,
-  codeGenerator: CodeGenerator,
-  patterns: CodePattern[]
-): string {
-  let i = 0;
-  let output = "";
-  while (i < condition.length) {
-    const next = matchNextPattern(condition.slice(i), patterns);
-    if (!next) break;
-
-    if (next.index > 0) {
-      // Output the text before the matched pattern
-      output += condition.slice(i, i + next.index);
-    }
-    // Process the matched pattern
-    const matched = condition.slice(i + next.index, i + next.index + next.length);
-
-    i += next.index + next.length;
-
-    switch (next.pattern.type) {
-      case "param":
-        output += codeGenerator.emitPreprocessorExpressionParam(matched);
-        break;
-      case "macro":
-        output += codeGenerator.emitPreprocessorExpressionMacro(matched);
-        break;
-      case "property":
-        output += codeGenerator.emitPreprocessorExpressionProperty(matched);
-        break;
-    }
-  }
-  if (i < condition.length) {
-    // Output any remaining text after the last matched pattern
-    output += condition.slice(i);
-  }
-
-  return output;
-}
-
 export const generator: Generator = {
-  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, options: GeneratorOptions): string {
+  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, codeGenerator: CodeGenerator): string {
     const pass1 = repo.templates.get(filePath)?.pass1;
     if (!pass1) {
       throw new Error(`Template not found for file: ${filePath}`);
@@ -127,15 +81,14 @@ export const generator: Generator = {
 
     const generatorState: GeneratorState = {
       pass1,
-      optionParams: options.params ?? [],
-      codeGenerator: resolveSegmentGenerator(options.target),
+      codeGenerator,
       currentLine: 0,
       currentColumn: 0,
       preprocessIfStack: [],
       patterns: [...DEFAULT_PATTERNS],
       currentFunctionCall: [],
       currentParenthesesState: 0,
-      result: "",
+      result: [],
     };
 
     generateImpl(generatorState);
@@ -148,29 +101,55 @@ export const generator: Generator = {
         `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
       );
     }
-    return generatorState.result;
+
+    // merge results
+    // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
+    generatorState.result = generatorState.result.reduce((acc: CodeSegment[], segment: CodeSegment) => {
+      if (
+        acc.length > 0 &&
+        acc[acc.length - 1].type === segment.type &&
+        (segment.type === "raw" || segment.type === "code")
+      ) {
+        // Merge adjacent raw or code segments
+        acc[acc.length - 1].content += segment.content;
+      } else {
+        // Otherwise, just push the segment
+        acc.push(segment);
+      }
+      return acc;
+    }, []);
+
+    return codeGenerator.emit(...generatorState.result);
   },
 };
 
 function generateImpl(generatorState: GeneratorState) {
-  const {
-    pass1,
-    //optionParams,
-    codeGenerator,
-    preprocessIfStack,
-    patterns,
-    currentFunctionCall,
-  } = generatorState;
+  const { pass1, codeGenerator, preprocessIfStack, patterns, currentFunctionCall } = generatorState;
 
   let currentLine = generatorState.currentLine;
   let currentColumn = generatorState.currentColumn;
   let currentParenthesesState = generatorState.currentParenthesesState;
 
-  const output = (s: string) => {
-    if (currentFunctionCall.length > 0) {
-      currentFunctionCall[currentFunctionCall.length - 1].currentParam += s;
+  let currentPreProcessorExpression: CodeSegment[] | null = null;
+
+  const output = (type: "raw" | "code" | "expression", content: string) => {
+    const segment: CodeSegment = { type, content };
+    if (currentPreProcessorExpression !== null) {
+      if (type === "raw") {
+        throw new Error(
+          `Raw content inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`
+        );
+      } else {
+        segment.type = "raw"; // Convert to raw if we are inside a preprocessor expression
+        currentPreProcessorExpression.push(segment);
+      }
     } else {
-      generatorState.result += s;
+      if (currentFunctionCall.length > 0) {
+        // If we are inside a function call, append to the current parameter
+        currentFunctionCall[currentFunctionCall.length - 1].currentParam.push(segment);
+      } else {
+        generatorState.result.push(segment);
+      }
     }
   };
 
@@ -178,6 +157,126 @@ function generateImpl(generatorState: GeneratorState) {
     const line = pass1[i];
     currentLine = i;
     currentColumn = 0;
+
+    const processCurrentLine = () => {
+      while (currentColumn < line.length) {
+        const restLine = line.slice(currentColumn);
+        const next = matchNextPattern(restLine, patterns);
+        if (!next) break;
+
+        const indices = next.indices;
+        if (next.index > 0) {
+          // Output the text before the matched pattern
+          output("code", line.slice(currentColumn, currentColumn + next.index));
+        }
+        // Process the matched pattern
+        const matched = line.slice(currentColumn + next.index, currentColumn + next.index + next.length);
+
+        currentColumn += next.index + next.length;
+
+        let caller: string | undefined;
+        let name = matched;
+        switch (next.pattern.type) {
+          case "control":
+            if (matched === "(") {
+              currentParenthesesState++;
+              output("code", "(");
+            } else if (matched === ",") {
+              if (
+                currentFunctionCall.length > 0 &&
+                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState === currentParenthesesState
+              ) {
+                // End of current parameter, push it to params array
+                const call = currentFunctionCall[currentFunctionCall.length - 1];
+                if (call.currentParam.length === 0) {
+                  throw new Error(`Empty parameter at line ${currentLine + 1}, column ${currentColumn}`);
+                }
+                call.params.push(call.currentParam);
+                call.currentParam = []; // Reset current parameter
+              } else {
+                // Just output the comma
+                output("code", ",");
+              }
+            } else if (matched === ")") {
+              currentParenthesesState--;
+              if (currentParenthesesState < 0) {
+                throw new Error(`Unmatched closing parenthesis at line ${currentLine + 1}, column ${currentColumn}`);
+              }
+              if (
+                currentFunctionCall.length > 0 &&
+                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState === currentParenthesesState
+              ) {
+                // End of function call
+                const call = currentFunctionCall.pop();
+                if (call) {
+                  if (call.currentParam.length > 0) {
+                    call.params.push(call.currentParam);
+                  }
+                  output(
+                    "expression",
+                    call.caller
+                      ? codeGenerator.method(call.caller, call.name, call.params)
+                      : codeGenerator.function(call.name, call.params)
+                  );
+                }
+              } else {
+                output("code", ")");
+              }
+            }
+            break;
+          case "param":
+            output("expression", codeGenerator.param(matched));
+            break;
+          case "macro":
+            output("expression", codeGenerator.macro(matched));
+            break;
+          case "method":
+            if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
+              caller = next.pattern.replace[0];
+            } else {
+              caller = restLine.slice(indices![1][0], indices![1][1]);
+            }
+          case "function":
+            // Handle function/method patterns
+            if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[caller ? 1 : 0]) {
+              name = next.pattern.replace[caller ? 1 : 0]!;
+            } else {
+              name = restLine.slice(indices![caller ? 2 : 1][0], indices![caller ? 2 : 1][1]);
+            }
+
+            currentFunctionCall.push({
+              name,
+              parenthesesState: currentParenthesesState,
+              params: [],
+              currentParam: [],
+              caller,
+            });
+
+            currentParenthesesState++;
+            currentColumn++; // Skip the opening parenthesis
+            break;
+          case "property":
+            if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
+              caller = next.pattern.replace[0];
+            } else {
+              caller = restLine.slice(indices![1][0], indices![1][1]);
+            }
+            if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[1]) {
+              name = next.pattern.replace[1]!;
+            } else {
+              name = restLine.slice(indices![2][0], indices![2][1]);
+            }
+
+            output("expression", codeGenerator.property(caller, name));
+            break;
+        }
+      }
+      if (currentColumn < line.length) {
+        // Output any remaining text after the last matched pattern
+        output("code", line.slice(currentColumn));
+      }
+      output("code", "\n");
+    };
 
     if (line.startsWith("#")) {
       if (line.startsWith("#use ")) {
@@ -212,12 +311,17 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
-        const condition = line.slice(4).trim();
-        const expression = generatePreProcessorExpression(condition, codeGenerator, patterns);
+        currentColumn = 4;
         preprocessIfStack.push("if");
-        output("if (");
-        output(codeGenerator.emitPreprocessorExpressionMacro(expression));
-        output(") {\n");
+        output("raw", "if (");
+        currentPreProcessorExpression = [];
+        processCurrentLine();
+        if (currentFunctionCall.length > 0) {
+          throw new Error(`Incomplete function call at line ${currentLine + 1}`);
+        }
+        generatorState.result.push(...currentPreProcessorExpression);
+        output("raw", ") {\n");
+        currentPreProcessorExpression = null;
       } else if (line.startsWith("#elif ")) {
         if (
           preprocessIfStack.length === 0 ||
@@ -229,12 +333,17 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+        currentColumn = 6;
         preprocessIfStack[preprocessIfStack.length - 1] = "elif";
-        const condition = line.slice(6).trim();
-        const expression = generatePreProcessorExpression(condition, codeGenerator, patterns);
-        output("} else if (");
-        output(codeGenerator.emitPreprocessorExpressionMacro(expression));
-        output(") {\n");
+        output("raw", "} else if (");
+        currentPreProcessorExpression = [];
+        processCurrentLine();
+        if (currentFunctionCall.length > 0) {
+          throw new Error(`Incomplete function call at line ${currentLine + 1}`);
+        }
+        generatorState.result.push(...currentPreProcessorExpression);
+        output("raw", ") {\n");
+        currentPreProcessorExpression = null;
       } else if (line.startsWith("#else")) {
         if (
           preprocessIfStack.length === 0 ||
@@ -246,8 +355,11 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+        if (line.substring(5).trim() !== "") {
+          throw new Error(`Unexpected content after #else at line ${currentLine + 1}`);
+        }
         preprocessIfStack[preprocessIfStack.length - 1] = "else";
-        output("} else {\n");
+        output("raw", "} else {\n");
       } else if (line.startsWith("#endif")) {
         if (preprocessIfStack.length === 0) {
           throw new Error(`#endif mismatch at line ${currentLine + 1}`);
@@ -255,75 +367,14 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
-        output("}\n");
+        if (line.substring(6).trim() !== "") {
+          throw new Error(`Unexpected content after #endif at line ${currentLine + 1}`);
+        }
+        output("raw", "}\n");
         preprocessIfStack.pop();
       }
     } else {
-      while (currentColumn < line.length) {
-        const next = matchNextPattern(line.slice(currentColumn), patterns);
-        if (!next) break;
-
-        if (next.index > 0) {
-          // Output the text before the matched pattern
-          output(line.slice(currentColumn, currentColumn + next.index));
-        }
-        // Process the matched pattern
-        const matched = line.slice(currentColumn + next.index, currentColumn + next.index + next.length);
-
-        currentColumn += next.index + next.length;
-
-        switch (next.pattern.type) {
-          case "control":
-            if (matched === "(") {
-              currentParenthesesState++;
-            } else if (matched === ")") {
-              currentParenthesesState--;
-              if (currentParenthesesState < 0) {
-                throw new Error(`Unmatched closing parenthesis at line ${currentLine + 1}, column ${currentColumn}`);
-              }
-              if (
-                currentFunctionCall.length > 0 &&
-                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState === currentParenthesesState
-              ) {
-                // End of function call
-                const call = currentFunctionCall.pop();
-                if (call) {
-                  if (call.currentParam.trim()) {
-                    call.params.push(call.currentParam);
-                  }
-                  output(codeGenerator.emitFunction(call.name, call.params));
-                }
-              }
-            }
-            break;
-          case "param":
-            output(codeGenerator.emitParam(matched));
-            break;
-          case "macro":
-            output(codeGenerator.emitMacro(matched));
-            break;
-          case "function":
-          case "method":
-            // Handle function/method patterns
-            currentFunctionCall.push({
-              name: matched,
-              parenthesesState: currentParenthesesState,
-              params: [],
-              currentParam: "",
-            });
-
-            currentParenthesesState++;
-            currentColumn++; // Skip the opening parenthesis
-            break;
-          case "property":
-            output(codeGenerator.emitProperty(matched));
-            break;
-        }
-      }
-      if (currentColumn < line.length) {
-        // Output any remaining text after the last matched pattern
-        output(line.slice(currentColumn));
-      }
+      processCurrentLine();
     }
   }
 }

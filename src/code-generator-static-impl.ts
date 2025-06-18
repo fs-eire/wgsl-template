@@ -1,25 +1,70 @@
-import type { CodeGenerator } from "./types/code-generator";
+import type { CodeGenerator, CodeSegment } from "./types/code-generator";
+
+const renderParam = (param: CodeSegment[]): string => {
+  const render = (segment: CodeSegment): string => {
+    switch (segment.type) {
+      case "code":
+        return JSON.stringify(segment.content);
+      default:
+        return segment.content;
+    }
+  };
+
+  if (param.length === 0) {
+    return "";
+  } else if (param.length === 1) {
+    return render(param[0]);
+  } else {
+    return `absl::StrCat(${param.map(render).join(", ")})`;
+  }
+};
 
 export const staticCodeGenerator: CodeGenerator = {
-  emitParam: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  emit: function (...code: CodeSegment[]): string {
+    return code
+      .map((segment) => {
+        switch (segment.type) {
+          case "raw":
+            return segment.content;
+          case "code":
+            return `ss << ${JSON.stringify(segment.content)};\n`;
+          case "expression":
+            return `ss << ${segment.content};\n`;
+        }
+      })
+      .join("");
   },
-  emitMacro: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  param: function (name: string): string {
+    return `__param_${name}`;
   },
-  emitProperty: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  macro: function (name: string): string {
+    return `__macro_${name}`;
   },
-  emitFunction: function (_name: string, _params: string[]): string {
-    throw new Error("Function not implemented.");
+  property: function (obj: string, propertyName: string): string {
+    return `__var_${obj}.${propertyName}`;
   },
-  emitPreprocessorExpressionParam: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  function: function (name: string, params: CodeSegment[][]): string {
+    const code = [name, "("];
+
+    for (let i = 0; i < params.length; i++) {
+      code.push(renderParam(params[i]));
+      if (i < params.length - 1) {
+        code.push(", ");
+      }
+    }
+    code.push(")");
+    return code.join("");
   },
-  emitPreprocessorExpressionMacro: function (_name: string): string {
-    throw new Error("Function not implemented.");
-  },
-  emitPreprocessorExpressionProperty: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  method: function (obj: string, methodName: string, params: CodeSegment[][]): string {
+    const code = [`__var_${obj}.${methodName}`, "("];
+
+    for (let i = 0; i < params.length; i++) {
+      code.push(renderParam(params[i]));
+      if (i < params.length - 1) {
+        code.push(", ");
+      }
+    }
+    code.push(")");
+    return code.join("");
   },
 };
