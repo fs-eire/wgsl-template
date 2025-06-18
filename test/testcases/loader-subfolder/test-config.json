@@ -1,0 +1,76 @@
+{
+  "type": "loader",
+  "description": "Test recursive loading of template files from multiple subdirectories",
+  "expectedFiles": [
+    {
+      "path": "main.wgsl.template",
+      "content": [
+        "// Main entry point",
+        "@group(0) @binding(0) var<storage, read_write> output: array<f32>;",
+        "",
+        "@compute @workgroup_size(64)",
+        "fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {",
+        "    let index = global_id.x;",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "shaders/vertex.wgsl.template",
+      "content": [
+        "// Vertex shader",
+        "struct VertexInput {",
+        "    @location(0) position: vec3<f32>,",
+        "    @location(1) normal: vec3<f32>,",
+        "}",
+        "",
+        "@vertex",
+        "fn vs_main(input: VertexInput) -> @builtin(position) vec4<f32> {",
+        "    return vec4<f32>(input.position, 1.0);",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "shaders/fragment.wgsl.template",
+      "content": [
+        "// Fragment shader",
+        "@fragment",
+        "fn fs_main() -> @location(0) vec4<f32> {",
+        "    return vec4<f32>(1.0, 0.0, 0.0, 1.0);",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "shaders/compute/matrix.wgsl.template",
+      "content": [
+        "// Compute shader for matrix operations",
+        "@group(0) @binding(0) var<storage, read> input_a: array<f32>;",
+        "@group(0) @binding(1) var<storage, read> input_b: array<f32>;",
+        "@group(0) @binding(2) var<storage, read_write> output: array<f32>;",
+        "",
+        "@compute @workgroup_size(256)",
+        "fn matrix_multiply(@builtin(global_invocation_id) global_id: vec3<u32>) {",
+        "    let index = global_id.x;",
+        "    output[index] = input_a[index] * input_b[index];",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "utils/math.wgsl.template",
+      "content": [
+        "// Math utility functions",
+        "fn clamp_f32(value: f32, min_val: f32, max_val: f32) -> f32 {",
+        "    return max(min_val, min(value, max_val));",
+        "}",
+        "",
+        "fn lerp(a: f32, b: f32, t: f32) -> f32 {",
+        "    return a + t * (b - a);",
+        "}",
+        ""
+      ]
+    }
+  ]
+}

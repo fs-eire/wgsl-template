@@ -1,0 +1,4 @@
+// Shared utility file d
+fn shared_utility(value: f32) -> f32 {
+    return value * 1.5;
+}

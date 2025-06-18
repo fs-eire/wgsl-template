@@ -1,0 +1,38 @@
+{
+  "type": "loader",
+  "description": "Tests that the loader correctly handles files with different line endings (LF, CRLF, mixed) and normalizes them consistently",
+  "expectedFiles": [    {
+      "path": "unix-lf.wgsl.template",
+      "content": [
+        "// Template with LF line endings",
+        "fn unix_function() {",
+        "    var x = 1.0;",
+        "    var y = 2.0;",
+        "    return x + y;",
+        "}",
+        ""
+      ]
+    },    {
+      "path": "windows-crlf.wgsl.template",
+      "content": [
+        "// Template with CRLF line endings", 
+        "fn windows_function() {",
+        "    var a = 10;",
+        "    var b = 20;",
+        "    return a * b;",
+        "}",
+        ""
+      ]
+    },    {
+      "path": "mixed.wgsl.template",
+      "content": [
+        "// Template with mixed line endings",
+        "fn mixed_function() {",
+        "    var first = true;",
+        "    var second = false;",
+        "}",
+        ""
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+#include "b.wgsl.template"
+#include "c.wgsl.template"
+
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+    let index = global_id.x;
+    let result1 = process_b(f32(index));
+    let result2 = process_c(f32(index));
+    let final_result = shared_utility(result1 + result2);
+}

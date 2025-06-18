@@ -1,0 +1,5 @@
+{
+  "type": "loader",
+  "description": "Test loading from an empty directory (should return empty repository)",
+  "expectedFiles": []
+}

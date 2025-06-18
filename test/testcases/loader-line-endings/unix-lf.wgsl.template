@@ -1,0 +1,6 @@
+// Template with LF line endings
+fn unix_function() {
+    var x = 1.0;
+    var y = 2.0;
+    return x + y;
+}

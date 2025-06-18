@@ -1,0 +1,28 @@
+{
+  "name": "@fs-eire/wgsl-template",
+  "version": "0.1.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "ts-node test/test-main.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fs-eire/wgsl-template.git"
+  },
+  "author": "fs-eire",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/fs-eire/wgsl-template/issues"
+  },
+  "homepage": "https://github.com/fs-eire/wgsl-template#readme",
+  "description": "",
+  "devDependencies": {
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^24.0.1",
+    "minimist": "^1.2.8",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

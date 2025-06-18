@@ -1,0 +1,4 @@
+// First template file
+fn compute_main() {
+    var input_index = i32(global_id.x);
+}

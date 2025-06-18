@@ -1,0 +1,245 @@
+import { readdir, readFile, stat } from "node:fs/promises";
+import * as path from "node:path";
+import { inspect } from "node:util";
+import minimist from "minimist";
+
+// Import test framework types and utilities
+import { TestCase, TestConfig, TestResult } from "./test-types";
+
+// Import test runners
+import { runLoaderTest } from "./test-runner-loader";
+import { runParserTest } from "./test-runner-parser";
+import { runE2ETest } from "./test-runner-e2e";
+
+// Test case discovery
+async function discoverTestCases(testCasesDir: string, includeDisabled: boolean = false): Promise<TestCase[]> {
+  const testCases: TestCase[] = [];
+
+  try {
+    const entries = await readdir(testCasesDir);
+
+    for (const entry of entries) {
+      const testCaseDir = path.join(testCasesDir, entry);
+      const entryStat = await stat(testCaseDir);      if (entryStat.isDirectory()) {
+        try {
+          const testCase = await loadTestCase(entry, testCaseDir);
+            // Check if test is disabled
+          if (testCase.config.disabled && !includeDisabled) {
+            const reason = typeof testCase.config.disabled === 'string' 
+              ? testCase.config.disabled 
+              : 'no reason specified';
+            console.log(`⏭️  Skipping disabled test "${entry}": ${reason}`);
+            continue;
+          }
+          
+          testCases.push(testCase);
+        } catch (error) {
+          console.warn(
+            `⚠️  Failed to load test case "${entry}": ${
+              (error as Error).message
+            }`
+          );
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to discover test cases: ${(error as Error).message}`);
+  }
+
+  return testCases;
+}
+
+async function loadTestCase(
+  name: string,
+  directory: string
+): Promise<TestCase> {
+  // Load test configuration
+  const configPath = path.join(directory, "test-config.json");
+  let config: TestConfig;
+
+  try {
+    const configContent = await readFile(configPath, "utf8");
+    config = JSON.parse(configContent);
+  } catch (error) {
+    throw new Error(`Failed to load test config: ${(error as Error).message}`);
+  }
+  // Discover template files
+  const files = await readdir(directory);
+  const expectedExt = config.loaderOptions?.ext || ".wgsl.template";
+  const templateFiles = files.filter((file) => file.endsWith(expectedExt));
+  // Only require template files for e2e tests (loader and parser tests can be empty)
+  if (templateFiles.length === 0 && config.type === "e2e") {
+    throw new Error("No template files found");
+  }
+
+  // Load expected output if specified
+  let expectedOutput: string | undefined;
+  if (config.expectedOutputFile) {
+    try {
+      expectedOutput = await readFile(
+        path.join(directory, config.expectedOutputFile),
+        "utf8"
+      );
+    } catch (error) {
+      console.warn(
+        `⚠️  Could not load expected output file: ${(error as Error).message}`
+      );
+    }
+  }
+
+  return {
+    name,
+    directory,
+    templateFiles,
+    expectedOutput,
+    config,
+  };
+}
+
+// Test execution
+async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestResult> {
+  try {
+    switch (testCase.config.type) {
+      case "loader":
+        return await runLoaderTest(testCase, debug);
+      case "parser":
+        return await runParserTest(testCase, debug);
+      case "e2e":
+        return await runE2ETest(testCase, debug);
+      default:
+        throw new Error(`Unknown test type: ${(testCase.config as any).type}`);
+    }
+  } catch (error) {
+    return {
+      name: testCase.name,
+      passed: false,
+      error: (error as Error).message,
+    };
+  }
+}
+
+// Command line argument parsing
+function parseCommandLineArgs(): { testCase?: string; help?: boolean; debug?: boolean } {
+  const argv = minimist(process.argv.slice(2), {
+    string: ['case', 'c'],
+    boolean: ['help', 'h', 'debug', 'd'],
+    alias: {
+      c: 'case',
+      h: 'help',
+      d: 'debug'
+    }
+  });
+
+  return {
+    testCase: argv.case || argv.c,
+    help: argv.help || argv.h,
+    debug: argv.debug || argv.d
+  };
+}
+
+// Test runner
+async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<void> {
+  const testCasesDir = path.join(__dirname, "testcases");
+
+  console.log("🔍 Discovering test cases...");
+  let testCases = await discoverTestCases(testCasesDir);
+  if (specificTestCase) {
+    // First try to find the test case (including disabled ones)
+    const allTestCases = await discoverTestCases(testCasesDir, true);
+    const foundTestCase = allTestCases.find((tc) => tc.name === specificTestCase);
+    
+    if (!foundTestCase) {
+      console.log(`❌ Test case "${specificTestCase}" not found!`);
+      console.log("Available test cases:");
+      allTestCases.forEach((tc) => {
+        const disabledInfo = tc.config.disabled 
+          ? ` (disabled: ${typeof tc.config.disabled === 'string' ? tc.config.disabled : 'no reason'})`
+          : '';
+        console.log(`  - ${tc.name}${disabledInfo}`);
+      });
+      process.exit(1);
+    }
+    
+    // Check if the found test case is disabled
+    if (foundTestCase.config.disabled) {
+      const reason = typeof foundTestCase.config.disabled === 'string' 
+        ? foundTestCase.config.disabled 
+        : 'no reason specified';
+      console.log(`❌ Cannot run disabled test case "${specificTestCase}": ${reason}`);
+      process.exit(1);
+    }
+    
+    testCases = [foundTestCase];
+    console.log(`🎯 Running specific test case: ${specificTestCase}`);
+  }
+
+  if (testCases.length === 0) {
+    console.log("❌ No test cases found!");
+    return;
+  }
+
+  console.log(`📋 Found ${testCases.length} test case(s)\n`);
+
+  const results: TestResult[] = [];
+  for (const testCase of testCases) {
+    console.log(`🧪 Running test: ${testCase.name}`);
+    if (testCase.config.description) {
+      console.log(`   📄 ${testCase.config.description}`);
+    }
+    const result = await runTestCase(testCase, debug);
+    results.push(result);
+
+    if (result.passed) {
+      console.log(`✅ ${testCase.name} - PASSED`);
+    } else {
+      console.log(`❌ ${testCase.name} - FAILED`);
+      console.log(`   Error: ${result.error}`);
+    }
+    console.log();
+  }
+
+  // Summary
+  const passed = results.filter((r) => r.passed).length;
+  const failed = results.filter((r) => !r.passed).length;
+
+  console.log(`\n📊 Test Summary:`);
+  console.log(`✅ Passed: ${passed}`);
+  console.log(`❌ Failed: ${failed}`);
+  console.log(`📋 Total:  ${results.length}`);
+
+  if (failed > 0) {
+    process.exit(1);
+  }
+}
+
+// Export utilities for individual test cases
+export { TestCase, TestConfig, TestResult } from "./test-types";
+
+export { assertEquals, assertContains, assertNotContains } from "./test-utils";
+
+// Run tests if this file is executed directly
+if (require.main === module) {  const { testCase, help, debug } = parseCommandLineArgs();
+
+  if (help) {
+    console.log(`
+Usage: npm test [-- [options]]
+       npx ts-node test/test-main.ts [options]
+
+Options:
+  --case, -c <name>    Run only the specified test case
+  --debug, -d          Print detailed repository information using util.inspect
+  --help, -h           Show this help message
+
+Examples:
+  npm test                           # Run all test cases
+  npm test -- --case parser-basic   # Run only parser-basic test case
+  npm test -- -c loader-empty       # Run only loader-empty test case
+`);
+    process.exit(0);
+  }
+
+  runAllTests(testCase, debug).catch((error) => {
+    console.error("💥 Test runner failed:", error);
+    process.exit(1);
+  });
+}

@@ -1,0 +1,14 @@
+{
+  "type": "loader",
+  "description": "Test loading a single template file from a directory",
+  "generatorOptions": {
+    "target": "ort-static",
+    "params": []
+  },
+  "expectedFiles": [
+    {
+      "path": "basic.wgsl.template",
+      "content": ["fn a() {", "    var x = 5;", "    var y = 10;", "}", ""]
+    }
+  ]
+}

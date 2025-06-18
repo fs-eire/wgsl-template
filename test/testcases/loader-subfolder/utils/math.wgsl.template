@@ -1,0 +1,8 @@
+// Math utility functions
+fn clamp_f32(value: f32, min_val: f32, max_val: f32) -> f32 {
+    return max(min_val, min(value, max_val));
+}
+
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    return a + t * (b - a);
+}

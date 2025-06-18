@@ -1,0 +1,4 @@
+// This file should be ignored (wrong extension)
+fn should_be_ignored() {
+    // This won't be loaded
+}

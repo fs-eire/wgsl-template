@@ -1,0 +1,30 @@
+{
+  "type": "loader",
+  "description": "Test loading template files with custom file extension (.wgsl.custom)",
+  "loaderOptions": {
+    "ext": ".wgsl.custom"
+  },
+  "expectedFiles": [
+    {
+      "path": "shader.wgsl.custom",
+      "content": [
+        "// Custom extension template",
+        "fn custom_shader() {",
+        "    var color = vec4<f32>(1.0, 0.0, 0.0, 1.0);",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "material.wgsl.custom",
+      "content": [
+        "// Another custom extension template",
+        "struct Material {",
+        "    albedo: vec3<f32>,",
+        "    roughness: f32,",
+        "}",
+        ""
+      ]
+    }
+  ]
+}

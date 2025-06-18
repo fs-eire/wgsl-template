@@ -1,0 +1,5 @@
+// Another custom extension template
+struct Material {
+    albedo: vec3<f32>,
+    roughness: f32,
+}

@@ -1,0 +1,5 @@
+{
+  "type": "parser",
+  "description": "Test diamond dependency pattern where file D is included through both B and C paths, ensuring D is only included once",
+  "disabled": "Parser include processing not yet fully implemented"
+}

@@ -1,0 +1,10 @@
+
+
+fn shared_utility(value: f32) -> f32 {
+    return value * 1.5;
+}
+
+
+fn process_c(value: f32) -> f32 {
+    return shared_utility(value) + 10.0;
+}

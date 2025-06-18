@@ -1,0 +1,5 @@
+// Template with mixed line endings
+fn mixed_function() {
+    var first = true;
+    var second = false;
+}

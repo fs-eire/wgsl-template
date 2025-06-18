@@ -1,0 +1,6 @@
+// File c that includes d
+#include "d.wgsl.template"
+
+fn process_c(value: f32) -> f32 {
+    return shared_utility(value) + 10.0;
+}

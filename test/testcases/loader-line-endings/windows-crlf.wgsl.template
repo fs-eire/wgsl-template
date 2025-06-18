@@ -1,0 +1,6 @@
+// Template with CRLF line endings
+fn windows_function() {
+    var a = 10;
+    var b = 20;
+    return a * b;
+}
