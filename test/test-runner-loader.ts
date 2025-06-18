@@ -1,6 +1,6 @@
 import { loader } from "../src/loader-impl.js";
 import { assertEquals } from "./test-utils.js";
-import { type TestCase, type TestResult } from "./test-types.js";
+import type { TestCase, TestResult } from "./test-types.js";
 import { inspect } from "node:util";
 
 export async function runLoaderTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {

@@ -4,7 +4,7 @@ import { loader } from "../src/loader-impl.js";
 import { parser } from "../src/parser-impl.js";
 import { generator } from "../src/generator-impl.js";
 import { assertEquals } from "./test-utils.js";
-import { type TestCase, type TestResult } from "./test-types.js";
+import type { TestCase, TestResult } from "./test-types.js";
 
 export async function runE2ETest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
   // TODO: Implement e2e tests (similar to the original implementation)

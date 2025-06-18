@@ -199,11 +199,6 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
   }
 }
 
-// Export utilities for individual test cases
-export { TestCase, TestConfig, TestResult } from "./test-types.js";
-
-export { assertEquals, assertContains, assertNotContains } from "./test-utils.js";
-
 // Run tests if this file is executed directly
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const { testCase, help, debug } = parseCommandLineArgs();
