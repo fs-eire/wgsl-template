@@ -1,8 +1,8 @@
 import { readdir, readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
 
-import type { Loader, LoadFromDirectoryOptions, TemplateRepository } from "./types/loader";
-import type { TemplatePass0 } from "./types/template";
+import type { Loader, LoadFromDirectoryOptions, TemplateRepository } from "./types/loader.js";
+import type { TemplatePass0 } from "./types/template.js";
 
 /**
  * Recursively scans a directory and its subdirectories for template files.

@@ -1,4 +1,4 @@
-import type { GenerateResult } from "./generator";
+import type { GenerateResult } from "./generator.js";
 
 /**
  * Represents a template file with its raw content before processing.

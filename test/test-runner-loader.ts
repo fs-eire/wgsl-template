@@ -1,11 +1,13 @@
 import { loader } from "../src/loader-impl.js";
 import { assertEquals } from "./test-utils.js";
-import type { TestCase, TestResult } from "./test-types.js";
+import type { TestCase, TestResult, LoaderTestConfig } from "./test-types.js";
 import { inspect } from "node:util";
 
 export async function runLoaderTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
+  const config = testCase.config as LoaderTestConfig;
+
   // Step 1: Load templates using the loader with custom options
-  const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
+  const repo = await loader.loadFromDirectory(testCase.directory, config.loaderOptions);
 
   if (debug) {
     console.log(`   🐛 Debug - Loaded repository:`);
@@ -13,7 +15,7 @@ export async function runLoaderTest(testCase: TestCase, debug?: boolean): Promis
   }
 
   // Step 2: Compare with expected files
-  const expectedFiles = testCase.config.expectedFiles;
+  const expectedFiles = config.expectedFiles;
   if (expectedFiles) {
     for (const expectedFile of expectedFiles) {
       const template = repo.templates.get(expectedFile.path);

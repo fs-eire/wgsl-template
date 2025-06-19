@@ -1,6 +1,6 @@
-import type { CodeGenerator } from "./code-generator";
-import type { TemplateRepository } from "./loader";
-import type { TemplateGenerateResult, TemplatePass1 } from "./template";
+import type { CodeGenerator } from "./code-generator.js";
+import type { TemplateRepository } from "./loader.js";
+import type { TemplateGenerateResult, TemplatePass1 } from "./template.js";
 
 export interface GenerateResult {
   code: string;

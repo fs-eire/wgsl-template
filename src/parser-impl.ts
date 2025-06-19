@@ -1,6 +1,6 @@
-import type { Parser } from "./types/parser";
-import type { TemplateRepository } from "./types/loader";
-import type { TemplatePass1, TemplatePass0 } from "./types/template";
+import type { Parser } from "./types/parser.js";
+import type { TemplateRepository } from "./types/loader.js";
+import type { TemplatePass1, TemplatePass0 } from "./types/template.js";
 
 /**
  * Parses raw content of a template file and remove comments.

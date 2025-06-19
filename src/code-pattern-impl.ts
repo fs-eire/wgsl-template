@@ -1,4 +1,4 @@
-import type { CodePattern } from "./types/code-pattern";
+import type { CodePattern } from "./types/code-pattern.js";
 
 //
 // The default patterns for code generation that are automatically included

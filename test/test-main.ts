@@ -8,7 +8,7 @@ import type { TestCase, TestConfig, TestResult } from "./test-types.js";
 // Import test runners
 import { runLoaderTest } from "./test-runner-loader.js";
 import { runParserTest } from "./test-runner-parser.js";
-import { runE2ETest } from "./test-runner-e2e.js";
+import { runE2ETest, runE2ETestWithFolders } from "./test-runner-e2e.js";
 import { runGeneratorTest } from "./test-runner-generator.js";
 
 // Test case discovery
@@ -58,7 +58,14 @@ async function loadTestCase(name: string, directory: string): Promise<TestCase> 
   }
   // Discover template files
   const files = await readdir(directory);
-  const expectedExt = config.loaderOptions?.ext || ".wgsl.template";
+  let expectedExt = ".wgsl.template";
+
+  if (config.type === "loader" && config.loaderOptions?.ext) {
+    expectedExt = config.loaderOptions.ext;
+  } else if (config.type === "e2e" && config.templateExt) {
+    expectedExt = config.templateExt;
+  }
+
   const templateFiles = files.filter((file) => file.endsWith(expectedExt));
   // Only require template files for e2e tests (loader and parser tests can be empty)
   if (templateFiles.length === 0 && config.type === "e2e") {
@@ -82,11 +89,25 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
       case "parser":
         return await runParserTest(testCase, debug);
       case "e2e":
-        return await runE2ETest(testCase, debug);
+        // Check if this is a new-style E2E test with src/gen/expected folders
+        const srcDir = path.join(testCase.directory, "src");
+        const expectedDir = path.join(testCase.directory, "expected");
+
+        try {
+          await stat(srcDir);
+          await stat(expectedDir);
+          // New folder structure detected, use the new E2E test runner
+          await runE2ETestWithFolders(testCase.name, testCase.directory);
+          return { name: testCase.name, passed: true };
+        } catch {
+          // Fall back to old E2E test runner
+          return await runE2ETest(testCase, debug);
+        }
       case "generator":
         return await runGeneratorTest(testCase, debug);
       default:
-        throw new Error(`Unknown test type: ${testCase.config.type}`);
+        const exhaustiveCheck: never = testCase.config;
+        throw new Error(`Unknown test type: ${(exhaustiveCheck as TestConfig).type}`);
     }
   } catch (error) {
     return {

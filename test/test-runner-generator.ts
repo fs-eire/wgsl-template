@@ -5,10 +5,12 @@ import { loader } from "../src/loader-impl.js";
 import { parser } from "../src/parser-impl.js";
 import { generator } from "../src/generator-impl.js";
 import { resolveCodeGenerator } from "../src/code-generator-impl.js";
-import type { TestCase, TestResult } from "./test-types.js";
+import type { TestCase, TestResult, GeneratorTestConfig } from "./test-types.js";
 
 export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
-  if (typeof testCase.config.entries !== "object") {
+  const config = testCase.config as GeneratorTestConfig;
+
+  if (typeof config.entries !== "object") {
     throw new Error("entries must be an object with template file paths as keys");
   }
 
@@ -21,7 +23,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
   }> = [];
 
   // Flatten the entries with their targets
-  for (const [templatePath, entryConfig] of Object.entries(testCase.config.entries)) {
+  for (const [templatePath, entryConfig] of Object.entries(config.entries)) {
     if (!entryConfig.targets || Object.keys(entryConfig.targets).length === 0) {
       throw new Error(`Entry "${templatePath}" is missing required "targets" property`);
     }

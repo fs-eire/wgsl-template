@@ -4,11 +4,13 @@ import { inspect } from "node:util";
 import { loader } from "../src/loader-impl.js";
 import { parser } from "../src/parser-impl.js";
 import { assertEquals } from "./test-utils.js";
-import type { TestCase, TestResult } from "./test-types.js";
+import type { TestCase, TestResult, ParserTestConfig } from "./test-types.js";
 
 export async function runParserTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
+  const config = testCase.config as ParserTestConfig;
+
   // Step 1: Load templates
-  const repo = await loader.loadFromDirectory(testCase.directory, testCase.config.loaderOptions);
+  const repo = await loader.loadFromDirectory(testCase.directory, { ext: ".wgsl.template" });
 
   if (debug) {
     console.log(`   🐛 Debug - Loaded repository:`);
@@ -25,7 +27,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
     }
 
     // If this test expects an error but we got here without throwing, that's a failure
-    if (testCase.config.expectsError) {
+    if (config.expectsError) {
       return {
         name: testCase.name,
         passed: false,
@@ -69,7 +71,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
     };
   } catch (error) {
     // If we expected an error, check if this is the expected behavior
-    if (testCase.config.expectsError) {
+    if (config.expectsError) {
       const errorMessage = (error as Error).message;
 
       if (debug) {
@@ -82,8 +84,8 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
       }
 
       // If expectsError is a string, check if the error message contains the expected pattern
-      if (typeof testCase.config.expectsError === "string") {
-        if (errorMessage.includes(testCase.config.expectsError)) {
+      if (typeof config.expectsError === "string") {
+        if (errorMessage.includes(config.expectsError)) {
           return {
             name: testCase.name,
             passed: true,
@@ -92,7 +94,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
           return {
             name: testCase.name,
             passed: false,
-            error: `Expected error message to contain "${testCase.config.expectsError}", but got: ${errorMessage}`,
+            error: `Expected error message to contain "${config.expectsError}", but got: ${errorMessage}`,
           };
         }
       } else {

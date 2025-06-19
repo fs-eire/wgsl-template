@@ -1,9 +1,9 @@
 import * as fs from "fs";
 import * as path from "path";
-import { resolveCodeGenerator } from "./code-generator-impl";
-import { generator } from "./generator-impl";
-import { loader } from "./loader-impl";
-import { parser } from "./parser-impl";
+import { resolveCodeGenerator } from "./code-generator-impl.js";
+import { generator } from "./generator-impl.js";
+import { loader } from "./loader-impl.js";
+import { parser } from "./parser-impl.js";
 
 export interface TemplateLoadOptions {
   templateExt: string;

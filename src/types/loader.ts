@@ -1,4 +1,4 @@
-import type { TemplateBase, TemplatePass0 } from "./template";
+import type { TemplateBase, TemplatePass0 } from "./template.js";
 
 export interface TemplateRepository<T extends TemplateBase> {
   /**

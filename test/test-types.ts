@@ -7,29 +7,46 @@ export interface TestCase {
   config: TestConfig;
 }
 
-export interface TestConfig {
-  type: "loader" | "parser" | "e2e" | "generator";
+// Base test configuration
+export interface BaseTestConfig {
   description?: string; // Optional description of what the test does
   disabled?: boolean | string; // Optional: true/false or reason why disabled
+}
 
-  // For loader and parser tests: true if test should throw an error, or expected error message pattern
-  expectsError?: boolean | string;
-
-  // For loader tests
+// Loader test configuration
+export interface LoaderTestConfig extends BaseTestConfig {
+  type: "loader";
+  expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
   loaderOptions?: {
     ext?: string;
   };
-  // For loader tests
   expectedFiles?: Array<{
     path: string;
     content: string[];
   }>;
+}
 
-  // For e2e tests
+// Parser test configuration
+export interface ParserTestConfig extends BaseTestConfig {
+  type: "parser";
+  expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
+}
+
+// E2E test configuration
+export interface E2ETestConfig extends BaseTestConfig {
+  type: "e2e";
+  templateExt?: string;
+  generator: string;
+  namespaces?: string[];
   params?: Record<string, string | number | boolean>; // Parameters to pass to the generator
+  expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
+}
 
-  // For e2e and generator tests - object with template file paths as keys
-  entries?: Record<
+// Generator test configuration
+export interface GeneratorTestConfig extends BaseTestConfig {
+  type: "generator";
+  // Generator tests use object with template file paths as keys
+  entries: Record<
     string,
     {
       targets: Record<
@@ -43,6 +60,9 @@ export interface TestConfig {
     }
   >;
 }
+
+// Union type for all test configurations
+export type TestConfig = LoaderTestConfig | ParserTestConfig | E2ETestConfig | GeneratorTestConfig;
 
 export interface TestResult {
   name: string;

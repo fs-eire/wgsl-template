@@ -1,4 +1,4 @@
-import type { CodeGenerator, CodeSegment } from "../src/types/code-generator";
+import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
 import type { SourceBuilder } from "./types/builder";
 
 const renderParam = (param: CodeSegment[]): string => {

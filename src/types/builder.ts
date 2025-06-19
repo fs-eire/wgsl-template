@@ -1,5 +1,5 @@
-import type { TemplateRepository } from "./loader";
-import type { TemplateGenerateResult, TemplateFinalResult } from "./template";
+import type { TemplateRepository } from "./loader.js";
+import type { TemplateGenerateResult, TemplateFinalResult } from "./template.js";
 
 export interface SourceBuilderOptions {
   /**
