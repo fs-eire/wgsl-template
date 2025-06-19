@@ -1,0 +1,7 @@
+{
+  "type": "generator",
+  "description": "Test error handling for empty #if directive",
+  "entries": ["test.wgsl.template"],
+  "target": "test",
+  "expectsError": "Missing content after preprocessor directive"
+}

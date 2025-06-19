@@ -1,0 +1,7 @@
+#param 123INVALID_START
+#param VALID_PARAM
+
+fn test_function() {
+    let value1 = 123INVALID_START;
+    let value2 = VALID_PARAM;
+}

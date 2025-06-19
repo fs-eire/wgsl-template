@@ -1,0 +1,7 @@
+{
+  "type": "generator",
+  "description": "Test error handling for duplicate parameter declarations",
+  "entries": ["test.wgsl.template"],
+  "target": "test",
+  "expectsError": "Duplicate param"
+}

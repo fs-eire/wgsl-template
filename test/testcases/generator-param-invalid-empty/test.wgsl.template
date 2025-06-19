@@ -1,0 +1,5 @@
+#param 
+
+fn test_function() {
+    let value = 42.0;
+}

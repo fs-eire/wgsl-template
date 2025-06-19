@@ -300,6 +300,12 @@ function generateImpl(generatorState: GeneratorState) {
           .split(" ")
           .filter((s) => s.trim())
           .map((s) => s.trim());
+
+        // Check if no parameters were provided
+        if (params.length === 0) {
+          throw new Error(`No parameters specified in #param directive at line ${currentLine + 1}`);
+        }
+
         for (const param of params) {
           const pattern = createParamPattern(param);
           if (
@@ -313,6 +319,13 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+        
+        // Check if there's a condition after #if
+        const condition = line.slice(4).trim();
+        if (condition.length === 0) {
+          throw new Error(`Empty condition in #if directive at line ${currentLine + 1}`);
+        }
+        
         currentColumn = 4;
         preprocessIfStack.push("if");
         output("raw", "if (");
@@ -341,6 +354,13 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+        
+        // Check if there's a condition after #elif
+        const condition = line.slice(6).trim();
+        if (condition.length === 0) {
+          throw new Error(`Empty condition in #elif directive at line ${currentLine + 1}`);
+        }
+        
         currentColumn = 6;
         preprocessIfStack[preprocessIfStack.length - 1] = "elif";
         output("raw", "} else if (");
@@ -386,6 +406,13 @@ function generateImpl(generatorState: GeneratorState) {
         }
         output("raw", "}\n");
         preprocessIfStack.pop();
+      } else {
+        if (["#use", "#param", "#if", "#elif"].includes(line)) {
+          throw new Error(`Missing content after preprocessor directive at line ${currentLine + 1}`);
+        } else {
+          // Handle unknown preprocessor directive
+          throw new Error(`Unknown preprocessor directive: ${line} at line ${currentLine + 1}`);
+        }
       }
     } else {
       processCurrentLine();

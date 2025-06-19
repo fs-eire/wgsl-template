@@ -1,0 +1,7 @@
+{
+  "type": "generator",
+  "description": "Test error handling for parameter identifier starting with number",
+  "entries": ["test.wgsl.template"],
+  "target": "test",
+  "expectsError": "Invalid parameter identifier"
+}

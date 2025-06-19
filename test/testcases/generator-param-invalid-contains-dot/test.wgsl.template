@@ -1,0 +1,5 @@
+#param WITH.DOT
+
+fn test_function() {
+    let value = WITH.DOT;
+}

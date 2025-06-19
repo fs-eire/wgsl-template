@@ -1,0 +1,5 @@
+#param 123INVALID
+
+fn test_function() {
+    let value = 123INVALID;
+}

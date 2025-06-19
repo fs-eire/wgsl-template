@@ -1,0 +1,5 @@
+#param WITH-HYPHEN
+
+fn test_function() {
+    let value = WITH-HYPHEN;
+}

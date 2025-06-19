@@ -1,0 +1,7 @@
+{
+  "type": "generator",
+  "description": "Test error handling for parameter identifier containing dot",
+  "entries": ["test.wgsl.template"],
+  "target": "test",
+  "expectsError": "Invalid parameter identifier"
+}
