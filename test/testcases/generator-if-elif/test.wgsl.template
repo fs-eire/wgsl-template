@@ -1,0 +1,27 @@
+#param DATA_TYPE
+
+fn process_data(input: f32) -> f32 {
+#if DATA_TYPE == 1
+    // Integer processing path
+    return floor(input * 100.0) / 100.0;
+#elif DATA_TYPE == 2
+    // Float processing path
+    return input * 1.5;
+#elif DATA_TYPE == 3
+    // Double precision path
+    return input * 2.0;
+#else
+    // Default fallback path
+    return input;
+#endif
+}
+
+fn main_compute() {
+#if DATA_TYPE == 1
+    let result = process_data(42.0);
+#elif DATA_TYPE == 2
+    let result = process_data(3.14);
+#else
+    let result = process_data(1.0);
+#endif
+}

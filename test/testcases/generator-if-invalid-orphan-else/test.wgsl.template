@@ -1,0 +1,8 @@
+#param ENABLE_FEATURE
+
+fn test_function() {
+    // This #else has no preceding #if - should cause an error
+#else
+    return 1.0;
+#endif
+}

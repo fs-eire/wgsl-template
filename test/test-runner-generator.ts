@@ -39,6 +39,15 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
       // Generate the actual output
       const actualOutput = generator.generate(entry, parsedRepo, codeGenerator);
 
+      // If we expected an error but got here without throwing, that's a failure
+      if (testCase.config.expectsError) {
+        return {
+          name: testCase.name,
+          passed: false,
+          error: `Expected an error to be thrown, but the generation completed successfully`,
+        };
+      }
+
       // Load expected output from .gen file
       const expectedFilePath = path.join(testCase.directory, `${entry}.gen`);
       let expectedOutput: string;

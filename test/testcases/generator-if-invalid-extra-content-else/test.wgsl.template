@@ -1,0 +1,9 @@
+#param DATA_TYPE
+
+fn test_function() {
+#if DATA_TYPE == 1
+    return 1.0;
+#else something extra here
+    return 2.0;
+#endif
+}

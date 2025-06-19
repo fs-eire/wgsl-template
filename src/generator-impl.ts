@@ -317,7 +317,13 @@ function generateImpl(generatorState: GeneratorState) {
         preprocessIfStack.push("if");
         output("raw", "if (");
         currentPreProcessorExpression = [];
+        const cachedParenthesesState = currentParenthesesState;
+        currentParenthesesState = 0; // Reset parentheses state for preprocessor expressions
         processCurrentLine();
+        if (currentParenthesesState !== 0) {
+          throw new Error(`Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`);
+        }
+        currentParenthesesState = cachedParenthesesState; // Restore parentheses state
         if (currentFunctionCall.length > 0) {
           throw new Error(`Incomplete function call at line ${currentLine + 1}`);
         }
@@ -339,7 +345,13 @@ function generateImpl(generatorState: GeneratorState) {
         preprocessIfStack[preprocessIfStack.length - 1] = "elif";
         output("raw", "} else if (");
         currentPreProcessorExpression = [];
+        const cachedParenthesesState = currentParenthesesState;
+        currentParenthesesState = 0; // Reset parentheses state for preprocessor expressions
         processCurrentLine();
+        if (currentParenthesesState !== 0) {
+          throw new Error(`Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`);
+        }
+        currentParenthesesState = cachedParenthesesState; // Restore parentheses state
         if (currentFunctionCall.length > 0) {
           throw new Error(`Incomplete function call at line ${currentLine + 1}`);
         }

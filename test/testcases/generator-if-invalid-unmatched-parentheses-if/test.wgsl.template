@@ -1,0 +1,7 @@
+#param ENABLE_FEATURE
+
+fn test_function() {
+#if max(ENABLE_FEATURE
+    return 42.0;
+#endif
+}

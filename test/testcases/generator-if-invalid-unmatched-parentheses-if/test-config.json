@@ -1,0 +1,7 @@
+{
+  "type": "generator",
+  "description": "Test error handling for unmatched parentheses at end of #if line",
+  "entries": ["test.wgsl.template"],
+  "target": "test",
+  "expectsError": "Unmatched parentheses in preprocessor expression"
+}

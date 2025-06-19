@@ -1,0 +1,26 @@
+emit("\n");
+emit("fn process_data(input: f32) -> f32 {\n");
+if (param["DATA_TYPE"] == 1) {
+emit("\n");
+emit("    return floor(input * 100.0) / 100.0;\n");
+} else if (param["DATA_TYPE"] == 2) {
+emit("\n");
+emit("    return input * 1.5;\n");
+} else if (param["DATA_TYPE"] == 3) {
+emit("\n");
+emit("    return input * 2.0;\n");
+} else {
+emit("\n");
+emit("    return input;\n");
+}
+emit("}\n");
+emit("\n");
+emit("fn main_compute() {\n");
+if (param["DATA_TYPE"] == 1) {
+emit("    let result = process_data(42.0);\n");
+} else if (param["DATA_TYPE"] == 2) {
+emit("    let result = process_data(3.14);\n");
+} else {
+emit("    let result = process_data(1.0);\n");
+}
+emit("}\n");

@@ -1,0 +1,12 @@
+#param ENABLE_FEATURE
+
+fn test_function() {
+    let result = max(42.0,
+#if ENABLE_FEATURE
+        100.0
+#else
+        50.0
+#endif
+    );
+    return result;
+}

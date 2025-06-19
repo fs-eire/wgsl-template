@@ -1,0 +1,40 @@
+#param DATA_TYPE
+#param ENABLE_OPTIMIZATION
+
+fn process_data(input: f32) -> f32 {
+#if DATA_TYPE == 1
+    // Integer processing path
+#if ENABLE_OPTIMIZATION
+        return floor(input * 100.0) / 100.0;
+#else
+        return floor(input * 50.0) / 50.0;
+#endif
+#elif DATA_TYPE == 2
+    // Float processing path
+#if ENABLE_OPTIMIZATION
+        return input * 1.5;
+#else
+        return input * 1.2;
+#endif
+#else
+    // Default path
+#if ENABLE_OPTIMIZATION
+        return input * 2.0;
+#else
+        return input;
+#endif
+#endif
+}
+
+fn compute_result(value: f32) -> f32 {
+#if DATA_TYPE == 1
+#if ENABLE_OPTIMIZATION
+        let multiplier = 10.0;
+#else
+        let multiplier = 5.0;
+#endif
+    return value * multiplier;
+#else
+    return value * 1.0;
+#endif
+}

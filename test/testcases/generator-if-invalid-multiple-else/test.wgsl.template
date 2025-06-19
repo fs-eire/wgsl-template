@@ -1,0 +1,12 @@
+#param DATA_TYPE
+
+fn test_function() {
+#if DATA_TYPE == 1
+    return 1.0;
+#else
+    return 2.0;
+#else
+    // This second #else should cause an error
+    return 3.0;
+#endif
+}

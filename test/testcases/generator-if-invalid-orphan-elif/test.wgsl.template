@@ -1,0 +1,8 @@
+#param DATA_TYPE
+
+fn test_function() {
+    // This #elif has no preceding #if - should cause an error
+#elif DATA_TYPE == 2
+    return 2.0;
+#endif
+}

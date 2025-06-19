@@ -1,0 +1,8 @@
+#param ENABLE_FEATURE
+
+fn test_function() {
+    let value = 42.0;
+    // This #endif has no preceding #if - should cause an error
+#endif
+    return value;
+}

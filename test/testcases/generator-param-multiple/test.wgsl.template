@@ -1,0 +1,15 @@
+#param BUFFER_SIZE WORKGROUP_SIZE ENABLE_OPTIMIZATION
+
+fn compute_kernel() {
+    let buffer_size = BUFFER_SIZE;
+    let workgroup_size = WORKGROUP_SIZE;
+    
+#if ENABLE_OPTIMIZATION
+    let optimized = true;
+#else
+    let optimized = false;
+#endif
+    
+    // Use all parameters
+    let total = buffer_size * workgroup_size;
+}

@@ -1,4 +1,3 @@
-emit("\n");
 emit("let size = ");
 emit(param["BUFFER_SIZE"]);
 emit(";\n");
