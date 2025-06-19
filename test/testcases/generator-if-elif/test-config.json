@@ -1,6 +1,9 @@
 {
   "type": "generator",
   "description": "Test preprocessor #if, #elif, #else, #endif directive functionality with multiple conditions",
-  "entries": ["test.wgsl.template"],
-  "target": "test"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test"
+    }
+  }
 }

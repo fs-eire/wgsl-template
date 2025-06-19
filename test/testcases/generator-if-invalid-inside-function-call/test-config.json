@@ -1,7 +1,10 @@
 {
   "type": "generator",
   "description": "Test error handling for preprocessor directive inside function call",
-  "entries": ["test.wgsl.template"],
-  "target": "test",
-  "expectsError": "Preprocessor directive inside function call"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test",
+      "expectsError": "Preprocessor directive inside function call"
+    }
+  }
 }

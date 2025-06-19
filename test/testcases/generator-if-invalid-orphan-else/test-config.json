@@ -1,7 +1,10 @@
 {
   "type": "generator",
   "description": "Test error handling for #else without preceding #if",
-  "entries": ["test.wgsl.template"],
-  "target": "test",
-  "expectsError": "#else mismatch"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test",
+      "expectsError": "#else mismatch"
+    }
+  }
 }

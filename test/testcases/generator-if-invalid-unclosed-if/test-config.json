@@ -1,7 +1,10 @@
 {
   "type": "generator",
   "description": "Test error handling for unclosed #if directive",
-  "entries": ["test.wgsl.template"],
-  "target": "test",
-  "expectsError": "Unclosed preprocessor directive: if"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test",
+      "expectsError": "Unclosed preprocessor directive: if"
+    }
+  }
 }

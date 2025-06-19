@@ -1,7 +1,10 @@
 {
   "type": "generator",
   "description": "Test error handling for #endif without preceding #if",
-  "entries": ["test.wgsl.template"],
-  "target": "test",
-  "expectsError": "#endif mismatch"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test",
+      "expectsError": "#endif mismatch"
+    }
+  }
 }

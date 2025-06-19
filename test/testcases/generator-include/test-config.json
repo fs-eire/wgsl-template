@@ -1,6 +1,9 @@
 {
   "type": "generator",
   "description": "Test generator with templates that use #include directives",
-  "entries": ["main.wgsl.template"],
-  "target": "test"
+  "entries": {
+    "main.wgsl.template": {
+      "target": "test"
+    }
+  }
 }

@@ -54,10 +54,12 @@ export function createParamPattern(name: string): CodePattern {
   // Validate that the parameter name is a valid identifier
   // Valid identifiers: start with letter or underscore, followed by letters, digits, or underscores
   const identifierPattern = /^[a-zA-Z_][a-zA-Z0-9_]*$/;
-  
+
   if (!identifierPattern.test(name)) {
-    throw new Error(`Invalid parameter identifier: "${name}". Parameter names must start with a letter or underscore and contain only letters, digits, and underscores.`);
+    throw new Error(
+      `Invalid parameter identifier: "${name}". Parameter names must start with a letter or underscore and contain only letters, digits, and underscores.`
+    );
   }
-  
+
   return { type: "param", pattern: `\\b${name}\\b` };
 }

@@ -1,7 +1,10 @@
 {
   "type": "generator",
   "description": "Test error handling for parameter identifier starting with number (original test case)",
-  "entries": ["test.wgsl.template"],
-  "target": "test",
-  "expectsError": "Invalid parameter identifier"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test",
+      "expectsError": "Invalid parameter identifier"
+    }
+  }
 }

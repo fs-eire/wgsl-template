@@ -1,6 +1,9 @@
 {
   "type": "generator",
   "description": "Test property access pattern within #if conditional expressions",
-  "entries": ["test.wgsl.template"],
-  "target": "test"
+  "entries": {
+    "test.wgsl.template": {
+      "target": "test"
+    }
+  }
 }

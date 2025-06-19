@@ -29,8 +29,14 @@ export interface TestConfig {
   // For e2e tests
   params?: Record<string, string | number | boolean>; // Parameters to pass to the generator
 
-  // For e2e and generator tests - list of templates to generate
-  entries?: string[];
+  // For e2e and generator tests - object with template file paths as keys
+  entries?: Record<
+    string,
+    {
+      target: string;
+      expectsError?: boolean | string;
+    }
+  >;
 }
 
 export interface TestResult {
