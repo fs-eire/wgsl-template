@@ -3,7 +3,9 @@
   "description": "Test preprocessor #if directive functionality with nested conditions",
   "entries": {
     "test.wgsl.template": {
-      "target": "test"
+      "targets": {
+        "test": {}
+      }
     }
   }
 }

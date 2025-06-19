@@ -3,8 +3,11 @@
   "description": "Test error handling for extra content after #else",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "Unexpected content after #else"
+      "targets": {
+        "test": {
+          "expectsError": "Unexpected content after #else"
+        }
+      }
     }
   }
 }

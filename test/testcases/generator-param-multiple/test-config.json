@@ -3,7 +3,9 @@
   "description": "Test parameter substitution with multiple parameters declared in a single #param line",
   "entries": {
     "test.wgsl.template": {
-      "target": "test"
+      "targets": {
+        "test": {}
+      }
     }
   }
 }

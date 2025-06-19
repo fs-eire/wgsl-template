@@ -3,7 +3,11 @@
   "description": "Test basic function pattern with getElementAt",
   "entries": {
     "test.wgsl.template": {
-      "target": "test"
+      "targets": {
+        "test": {
+          "expectsError": false
+        }
+      }
     }
   }
 }

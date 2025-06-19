@@ -17,16 +17,22 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
     templatePath: string;
     target: string;
     expectsError?: boolean | string;
-  }> = Object.entries(testCase.config.entries).map(([templatePath, config]) => {
-    if (!config.target) {
-      throw new Error(`Entry "${templatePath}" is missing required "target" property`);
+  }> = [];
+
+  // Flatten the entries with their targets
+  for (const [templatePath, entryConfig] of Object.entries(testCase.config.entries)) {
+    if (!entryConfig.targets || Object.keys(entryConfig.targets).length === 0) {
+      throw new Error(`Entry "${templatePath}" is missing required "targets" property`);
     }
-    return {
-      templatePath,
-      target: config.target,
-      expectsError: config.expectsError,
-    };
-  });
+
+    for (const [targetName, targetConfig] of Object.entries(entryConfig.targets)) {
+      entriesToProcess.push({
+        templatePath,
+        target: targetName,
+        expectsError: targetConfig.expectsError,
+      });
+    }
+  }
 
   // Step 1: Run loader
   const repo = await loader.loadFromDirectory(testCase.directory);
@@ -60,12 +66,12 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
           return {
             name: testCase.name,
             passed: false,
-            error: `Entry "${entryConfig.templatePath}": Expected an error to be thrown, but the generation completed successfully`,
+            error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): Expected an error to be thrown, but the generation completed successfully`,
           };
         }
 
-        // Load expected output from .gen file
-        const expectedFilePath = path.join(testCase.directory, `${entryConfig.templatePath}.gen`);
+        // Load expected output from target-specific .gen file
+        const expectedFilePath = path.join(testCase.directory, `${entryConfig.templatePath}.${entryConfig.target}.gen`);
         let expectedOutput: string;
 
         try {
@@ -75,7 +81,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
         }
 
         if (debug) {
-          console.log(`   🐛 Debug - Entry "${entryConfig.templatePath}":`);
+          console.log(`   🐛 Debug - Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}):`);
           console.log(`   Expected file: ${expectedFilePath}`);
           console.log(`   Actual output length: ${actualOutput.length}`);
           console.log(`   Expected output length: ${expectedOutput.length}`);
@@ -113,10 +119,12 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
           }
 
           if (debug) {
-            console.log(`   ✅ All ${actualLines.length} lines match for entry "${entryConfig.templatePath}"`);
+            console.log(
+              `   ✅ All ${actualLines.length} lines match for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+            );
           }
         } catch (error) {
-          const errorMessage = `Entry "${entryConfig.templatePath}": ${(error as Error).message}`;
+          const errorMessage = `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): ${(error as Error).message}`;
 
           if (debug) {
             console.log(`   🐛 Debug - Test failed, outputting full results:`);
@@ -139,7 +147,9 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
           const errorMessage = (error as Error).message;
 
           if (debug) {
-            console.log(`🐛 Debug: Expected error caught for entry "${entryConfig.templatePath}":`);
+            console.log(
+              `🐛 Debug: Expected error caught for entry "${entryConfig.templatePath}" (target: ${entryConfig.target}):`
+            );
             console.log(`   Error type: ${(error as Error).constructor.name}`);
             console.log(`   Error message: ${errorMessage}`);
             if ((error as Error).stack) {
@@ -151,7 +161,9 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
           if (typeof entryConfig.expectsError === "string") {
             if (errorMessage.includes(entryConfig.expectsError)) {
               if (debug) {
-                console.log(`   ✅ Error message matches expected pattern for entry "${entryConfig.templatePath}"`);
+                console.log(
+                  `   ✅ Error message matches expected pattern for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+                );
               }
               // Continue to next entry - this one passed
               continue;
@@ -159,13 +171,15 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
               return {
                 name: testCase.name,
                 passed: false,
-                error: `Entry "${entryConfig.templatePath}": Expected error message to contain "${entryConfig.expectsError}", but got: ${errorMessage}`,
+                error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): Expected error message to contain "${entryConfig.expectsError}", but got: ${errorMessage}`,
               };
             }
           } else {
             // expectsError is true, so any error is acceptable for this entry
             if (debug) {
-              console.log(`   ✅ Any error was expected and received for entry "${entryConfig.templatePath}"`);
+              console.log(
+                `   ✅ Any error was expected and received for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+              );
             }
             // Continue to next entry - this one passed
             continue;
@@ -176,7 +190,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
         return {
           name: testCase.name,
           passed: false,
-          error: `Entry "${entryConfig.templatePath}": ${(error as Error).message}`,
+          error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): ${(error as Error).message}`,
         };
       }
     }

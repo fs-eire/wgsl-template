@@ -3,7 +3,9 @@
   "description": "Basic generator test, using the test generator",
   "entries": {
     "test.wgsl.template": {
-      "target": "test"
+      "targets": {
+        "test": {}
+      }
     }
   }
 }

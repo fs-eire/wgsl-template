@@ -3,8 +3,11 @@
   "description": "Test error handling for unclosed #if directive",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "Unclosed preprocessor directive: if"
+      "targets": {
+        "test": {
+          "expectsError": "Unclosed preprocessor directive: if"
+        }
+      }
     }
   }
 }

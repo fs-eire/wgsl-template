@@ -3,8 +3,11 @@
   "description": "Test error handling for #elif after #else",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "#elif mismatch"
+      "targets": {
+        "test": {
+          "expectsError": "#elif mismatch"
+        }
+      }
     }
   }
 }

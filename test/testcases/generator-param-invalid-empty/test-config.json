@@ -3,8 +3,11 @@
   "description": "Test error handling for empty parameter identifier",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "Missing content after preprocessor directive"
+      "targets": {
+        "test": {
+          "expectsError": "Missing content after preprocessor directive"
+        }
+      }
     }
   }
 }

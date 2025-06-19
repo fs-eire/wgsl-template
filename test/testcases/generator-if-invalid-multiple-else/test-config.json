@@ -3,8 +3,11 @@
   "description": "Test error handling for multiple #else blocks in the same #if chain",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "#else mismatch"
+      "targets": {
+        "test": {
+          "expectsError": "#else mismatch"
+        }
+      }
     }
   }
 }

@@ -11,7 +11,9 @@ export interface TestConfig {
   type: "loader" | "parser" | "e2e" | "generator";
   description?: string; // Optional description of what the test does
   disabled?: boolean | string; // Optional: true/false or reason why disabled
-  expectsError?: boolean | string; // Optional: true if test should throw an error, or expected error message pattern
+
+  // For loader and parser tests: true if test should throw an error, or expected error message pattern
+  expectsError?: boolean | string;
 
   // For loader tests
   loaderOptions?: {
@@ -23,9 +25,6 @@ export interface TestConfig {
     content: string[];
   }>;
 
-  // For generator tests
-  target?: string;
-
   // For e2e tests
   params?: Record<string, string | number | boolean>; // Parameters to pass to the generator
 
@@ -33,8 +32,12 @@ export interface TestConfig {
   entries?: Record<
     string,
     {
-      target: string;
-      expectsError?: boolean | string;
+      targets: Record<
+        string,
+        {
+          expectsError?: boolean | string;
+        }
+      >;
     }
   >;
 }

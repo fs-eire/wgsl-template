@@ -3,8 +3,11 @@
   "description": "Test error handling for extra content after #endif",
   "entries": {
     "test.wgsl.template": {
-      "target": "test",
-      "expectsError": "Unexpected content after #endif"
+      "targets": {
+        "test": {
+          "expectsError": "Unexpected content after #endif"
+        }
+      }
     }
   }
 }

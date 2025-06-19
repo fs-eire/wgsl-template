@@ -3,7 +3,9 @@
   "description": "Test property access pattern within #if conditional expressions",
   "entries": {
     "test.wgsl.template": {
-      "target": "test"
+      "targets": {
+        "test": {}
+      }
     }
   }
 }
