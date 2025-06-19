@@ -10,7 +10,6 @@
 #param dim_value_zero
 #param is_float16
 #param pad_mode
-#param output_rank_is_greater_than_1
 
 $MAIN {
   guardAgainstOutOfBoundsWorkgroupSizes(uniforms.output_size);

@@ -4,7 +4,9 @@
   "entries": {
     "test.wgsl.template": {
       "targets": {
-        "dynamic": {}
+        "dynamic": {
+          "expectedParams": ["BUFFER_SIZE", "WORKGROUP_SIZE", "ENABLE_OPTIMIZATION"]
+        }
       }
     }
   }

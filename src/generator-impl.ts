@@ -2,7 +2,7 @@ import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-patt
 
 import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
 import type { CodePattern } from "./types/code-pattern.js";
-import type { Generator } from "./types/generator.js";
+import type { Generator, GenerateResult } from "./types/generator.js";
 import type { TemplateRepository } from "./types/loader.js";
 import type { TemplatePass1 } from "./types/template.js";
 
@@ -29,6 +29,8 @@ interface GeneratorState {
   currentParenthesesState: number; // 0: no parentheses, >0: nested parentheses count
 
   result: CodeSegment[];
+  usedParams: Set<string>;
+  usedVariables: Set<string>;
 }
 
 /**
@@ -94,7 +96,7 @@ function matchNextPattern(
 }
 
 export const generator: Generator = {
-  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, codeGenerator: CodeGenerator): string {
+  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, codeGenerator: CodeGenerator): GenerateResult {
     const pass1 = repo.templates.get(filePath)?.pass1;
     if (!pass1) {
       throw new Error(`Template not found for file: ${filePath}`);
@@ -110,6 +112,8 @@ export const generator: Generator = {
       currentFunctionCall: [],
       currentParenthesesState: 0,
       result: [],
+      usedParams: new Set(),
+      usedVariables: new Set(),
     };
 
     generateImpl(generatorState);
@@ -127,7 +131,11 @@ export const generator: Generator = {
     // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
     generatorState.result = mergeAdjacentSegments(generatorState.result);
 
-    return codeGenerator.emit(generatorState.result);
+    return {
+      code: codeGenerator.emit(generatorState.result),
+      params: Array.from(generatorState.usedParams),
+      variables: Array.from(generatorState.usedVariables),
+    };
   },
 };
 
@@ -253,6 +261,7 @@ function generateImpl(generatorState: GeneratorState) {
             }
             break;
           case "param":
+            generatorState.usedParams.add(matched);
             output("expression", codeGenerator.param(matched));
             break;
           case "variable":
@@ -260,6 +269,7 @@ function generateImpl(generatorState: GeneratorState) {
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
               variableName = next.pattern.replace[0];
             }
+            generatorState.usedVariables.add(variableName);
             output("expression", codeGenerator.variable(variableName));
             break;
           case "method":
@@ -268,6 +278,8 @@ function generateImpl(generatorState: GeneratorState) {
             } else {
               caller = restLine.slice(indices![1][0], indices![1][1]);
             }
+            // Track the object variable for method calls
+            generatorState.usedVariables.add(caller);
           case "function":
             // Handle function/method patterns
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[caller ? 1 : 0]) {
@@ -292,6 +304,8 @@ function generateImpl(generatorState: GeneratorState) {
             } else {
               caller = restLine.slice(indices![1][0], indices![1][1]);
             }
+            // Track the object variable for property access
+            generatorState.usedVariables.add(caller);
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[1]) {
               name = next.pattern.replace[1]!;
             } else {

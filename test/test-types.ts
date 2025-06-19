@@ -36,6 +36,8 @@ export interface TestConfig {
         string,
         {
           expectsError?: boolean | string;
+          expectedParams?: string[];
+          expectedVariables?: string[];
         }
       >;
     }

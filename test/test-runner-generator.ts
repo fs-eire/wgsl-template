@@ -16,6 +16,8 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
     templatePath: string;
     target: string;
     expectsError?: boolean | string;
+    expectedParams?: string[];
+    expectedVariables?: string[];
   }> = [];
 
   // Flatten the entries with their targets
@@ -29,6 +31,8 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
         templatePath,
         target: targetName,
         expectsError: targetConfig.expectsError,
+        expectedParams: targetConfig.expectedParams,
+        expectedVariables: targetConfig.expectedVariables,
       });
     }
   }
@@ -57,7 +61,8 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
       try {
         // Generate the actual output
-        const actualOutput = generator.generate(entryConfig.templatePath, parsedRepo, codeGenerator);
+        const generateResult = generator.generate(entryConfig.templatePath, parsedRepo, codeGenerator);
+        const actualOutput = generateResult.code;
 
         // If we expected an error but got here without throwing, that's a failure
         if (entryConfig.expectsError) {
@@ -120,6 +125,42 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
             console.log(
               `   ✅ All ${actualLines.length} lines match for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
             );
+          }
+
+          // Check expected params if specified
+          if (entryConfig.expectedParams) {
+            const actualParams = generateResult.params.sort();
+            const expectedParams = entryConfig.expectedParams.sort();
+
+            if (JSON.stringify(actualParams) !== JSON.stringify(expectedParams)) {
+              throw new Error(
+                `Parameters mismatch:\n` +
+                  `  Expected: [${expectedParams.join(", ")}]\n` +
+                  `  Actual:   [${actualParams.join(", ")}]`
+              );
+            }
+
+            if (debug) {
+              console.log(`   ✅ Parameters match: [${actualParams.join(", ")}]`);
+            }
+          }
+
+          // Check expected variables if specified
+          if (entryConfig.expectedVariables) {
+            const actualVariables = generateResult.variables.sort();
+            const expectedVariables = entryConfig.expectedVariables.sort();
+
+            if (JSON.stringify(actualVariables) !== JSON.stringify(expectedVariables)) {
+              throw new Error(
+                `Variables mismatch:\n` +
+                  `  Expected: [${expectedVariables.join(", ")}]\n` +
+                  `  Actual:   [${actualVariables.join(", ")}]`
+              );
+            }
+
+            if (debug) {
+              console.log(`   ✅ Variables match: [${actualVariables.join(", ")}]`);
+            }
           }
         } catch (error) {
           const errorMessage = `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): ${(error as Error).message}`;
