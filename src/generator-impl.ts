@@ -225,11 +225,19 @@ function generateImpl(generatorState: GeneratorState) {
                   const params = call.params.map((p) => mergeAdjacentSegments(p));
                   // Clean up empty code segments in parameters
                   for (const param of params) {
-                    if (param.at(-1)?.type === "code" && param.at(-1)!.content.trim() === "") {
-                      param.pop();
+                    if (param.at(-1)?.type === "code") {
+                      if (param.at(-1)!.content.trim() === "") {
+                        param.pop();
+                      } else {
+                        param.at(-1)!.content = param.at(-1)!.content.trimEnd();
+                      }
                     }
-                    if (param.at(0)?.type === "code" && param.at(0)!.content.trim() === "") {
-                      param.shift();
+                    if (param.at(0)?.type === "code") {
+                      if (param.at(0)!.content.trim() === "") {
+                        param.shift();
+                      } else {
+                        param.at(0)!.content = param.at(0)!.content.trimStart();
+                      }
                     }
                   }
                   output(

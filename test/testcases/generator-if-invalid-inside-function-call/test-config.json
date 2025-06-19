@@ -4,7 +4,7 @@
   "entries": {
     "test.wgsl.template": {
       "targets": {
-        "test": {
+        "dynamic": {
           "expectsError": "Preprocessor directive inside function call"
         }
       }

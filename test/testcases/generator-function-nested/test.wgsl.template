@@ -1,0 +1,21 @@
+#use .offsetToIndices .setByIndices .getByIndices
+#param BUFFER_SIZE
+
+fn compute_kernel() {
+    let global_idx = get_global_id(0u);
+    
+    if (global_idx < BUFFER_SIZE) {
+        // Nested method calls: a.offsetToIndices(global_idx) as parameter to b.setByIndices()
+        b.setByIndices(a.offsetToIndices(global_idx), input_data[global_idx] * 2.0);
+        
+        // More complex nested example
+        output_buffer.setByIndices(
+            tensor_a.offsetToIndices(global_idx) + 1,
+            f(input_buffer.getByIndices(tensor_b.offsetToIndices(global_idx + 1u)))
+        );
+        
+        // Simple cases for comparison
+        let indices = a.offsetToIndices(global_idx);
+        b.setByIndices(indices, 42.0);
+    }
+}

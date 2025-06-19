@@ -4,12 +4,12 @@
   "entries": {
     "compute-param.wgsl.template": {
       "targets": {
-        "test": {}
+        "dynamic": {}
       }
     },
     "compute-no-param.wgsl.template": {
       "targets": {
-        "test": {}
+        "dynamic": {}
       }
     }
   }

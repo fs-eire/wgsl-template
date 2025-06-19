@@ -4,7 +4,7 @@
   "entries": {
     "main.wgsl.template": {
       "targets": {
-        "test": {}
+        "dynamic": {}
       }
     }
   }

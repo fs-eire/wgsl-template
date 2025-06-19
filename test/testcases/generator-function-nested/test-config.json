@@ -1,6 +1,6 @@
 {
   "type": "generator",
-  "description": "Test parameter substitution with multiple parameters declared in a single #param line",
+  "description": "Test nested function and method calls with offsetToIndices as parameter to setByIndices",
   "entries": {
     "test.wgsl.template": {
       "targets": {

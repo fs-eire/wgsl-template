@@ -4,9 +4,9 @@ import type { CodeGenerator } from "./types/code-generator";
 
 export function resolveCodeGenerator(generator: string): CodeGenerator {
   switch (generator) {
-    case "ort-static-cpp":
+    case "static-cpp":
       return staticCodeGenerator;
-    case "ort-dynamic-cpp":
+    case "dynamic":
       return dynamicCodeGenerator;
     default:
       throw new Error(`Unknown code generator: ${generator}`);

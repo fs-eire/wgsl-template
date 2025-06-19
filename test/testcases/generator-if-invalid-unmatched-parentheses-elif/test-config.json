@@ -4,7 +4,7 @@
   "entries": {
     "test.wgsl.template": {
       "targets": {
-        "test": {
+        "dynamic": {
           "expectsError": "Unmatched parentheses in preprocessor expression"
         }
       }

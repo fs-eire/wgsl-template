@@ -6,7 +6,6 @@ import { parser } from "../src/parser-impl.js";
 import { generator } from "../src/generator-impl.js";
 import { resolveCodeGenerator } from "../src/code-generator-impl.js";
 import type { TestCase, TestResult } from "./test-types.js";
-import { testCodeGenerator } from "./test-code-generator.js";
 
 export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Promise<TestResult> {
   if (typeof testCase.config.entries !== "object") {
@@ -54,8 +53,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
     // Step 3: Run generator for each entry
     for (const entryConfig of entriesToProcess) {
       // Resolve the code generator from the target for this specific entry
-      const codeGenerator =
-        entryConfig.target === "test" ? testCodeGenerator : resolveCodeGenerator(entryConfig.target);
+      const codeGenerator = resolveCodeGenerator(entryConfig.target);
 
       try {
         // Generate the actual output
