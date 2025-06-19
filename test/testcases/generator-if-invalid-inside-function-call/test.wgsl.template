@@ -1,12 +1,13 @@
+#use getElementAt
 #param ENABLE_FEATURE
 
 fn test_function() {
-    let result = max(42.0,
+    let result = getElementAt(data,
 #if ENABLE_FEATURE
-        100.0
+        1
 #else
-        50.0
+        0
 #endif
-    );
+        , 2);
     return result;
 }

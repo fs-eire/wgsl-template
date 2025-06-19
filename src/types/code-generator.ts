@@ -13,8 +13,8 @@ export interface CodeGenerator {
   // Generate an expression for a parameter
   param(name: string): string;
 
-  // Generate an expression for a macro
-  macro(name: string): string;
+  // Generate an expression for a variable
+  variable(name: string): string;
 
   // Generate an expression for a property
   property(obj: string, propertyName: string): string;

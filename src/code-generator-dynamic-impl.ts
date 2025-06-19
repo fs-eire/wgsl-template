@@ -56,8 +56,8 @@ export const dynamicCodeGenerator: CodeGenerator = {
   param: function (name: string): string {
     return `param[${JSON.stringify(name)}]`;
   },
-  macro: function (_name: string): string {
-    throw new Error("Function not implemented.");
+  variable: function (_name: string): string {
+    return `variable[${JSON.stringify(_name)}]`;
   },
   property: function (obj: string, propertyName: string): string {
     return `variable[${JSON.stringify(obj)}].${propertyName}`;

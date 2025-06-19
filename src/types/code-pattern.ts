@@ -1,5 +1,5 @@
 export interface CodePattern {
-  readonly type: "control" | "param" | "macro" | "function" | "method" | "property";
+  readonly type: "control" | "param" | "variable" | "function" | "method" | "property";
   readonly pattern: string | RegExp;
 
   // if present, this pattern will be replaced with the given value

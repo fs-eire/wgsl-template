@@ -197,7 +197,9 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
 
   console.log(`\n📊 Test Summary:`);
   console.log(`✅ Passed: ${passed}`);
-  console.log(`❌ Failed: ${failed}`);
+  if (failed > 0) {
+    console.log(`❌ Failed: ${failed}`);
+  }
   console.log(`📋 Total:  ${results.length}`);
 
   if (failed > 0) {

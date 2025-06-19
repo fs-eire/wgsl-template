@@ -4,12 +4,14 @@
   "entries": {
     "compute-param.wgsl.template": {
       "targets": {
-        "dynamic": {}
+        "dynamic": {},
+        "static-cpp": {}
       }
     },
     "compute-no-param.wgsl.template": {
       "targets": {
-        "dynamic": {}
+        "dynamic": {},
+        "static-cpp": {}
       }
     }
   }

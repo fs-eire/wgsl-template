@@ -1,0 +1,11 @@
+{
+  "type": "generator",
+  "description": "Test complex padding operation template with multiple conditional parameters and pad modes",
+  "entries": {
+    "pad.wgsl.template": {
+      "targets": {
+        "dynamic": {}
+      }
+    }
+  }
+}

@@ -4,7 +4,8 @@
   "entries": {
     "test.wgsl.template": {
       "targets": {
-        "dynamic": {}
+        "dynamic": {},
+        "static-cpp": {}
       }
     }
   }

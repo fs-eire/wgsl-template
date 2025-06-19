@@ -125,6 +125,116 @@ function parsePreprocessorIncludeDirectives(
 }
 
 /**
+ * Parses #define macro directives and applies macro substitutions.
+ *
+ * @param lines Array of lines to process
+ * @param fileName Name of the file being processed (for error reporting)
+ * @returns Array of lines with macros defined and substituted
+ */
+function parseMacroDirectives(lines: string[], fileName: string): string[] {
+  const macros: Map<string, string> = new Map();
+  const processedLines: string[] = [];
+
+  for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+    const line = lines[lineNumber];
+
+    // Check for malformed #define directives
+    if (line.trim().startsWith("#define ")) {
+      const defineMatch = line.match(/^#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+(.+)$/);
+      if (!defineMatch) {
+        // Check specific error cases
+        const emptyValueMatch = line.match(/^#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+        if (emptyValueMatch) {
+          throw new Error(
+            `Invalid macro definition in file ${fileName} at line ${
+              lineNumber + 1
+            }: macro "${emptyValueMatch[1]}" has no value`
+          );
+        }
+
+        const invalidNameMatch = line.match(/^#define\s+(\S+)(?:\s+(.+))?$/);
+        if (invalidNameMatch) {
+          throw new Error(
+            `Invalid macro definition in file ${fileName} at line ${
+              lineNumber + 1
+            }: invalid macro name "${invalidNameMatch[1]}" (must start with letter or underscore, contain only letters, numbers, and underscores)`
+          );
+        }
+
+        throw new Error(
+          `Invalid macro definition in file ${fileName} at line ${lineNumber + 1}: malformed #define directive`
+        );
+      }
+
+      // Valid #define directive
+      const macroName = defineMatch[1];
+      const macroValue = defineMatch[2].trim();
+
+      // Check for whitespace-only value
+      if (macroValue === "") {
+        throw new Error(
+          `Invalid macro definition in file ${fileName} at line ${
+            lineNumber + 1
+          }: macro "${macroName}" has empty value (whitespace only)`
+        );
+      }
+
+      // Check for duplicate macro definition
+      if (macros.has(macroName)) {
+        throw new Error(
+          `Duplicate macro definition in file ${fileName} at line ${lineNumber + 1}: "${macroName}" is already defined`
+        );
+      }
+
+      // Check for direct circular reference (macro referencing itself)
+      const directCircularRegex = new RegExp(`\\b${macroName}\\b`);
+      if (directCircularRegex.test(macroValue)) {
+        throw new Error(
+          `Circular macro reference in file ${fileName} at line ${
+            lineNumber + 1
+          }: macro "${macroName}" references itself`
+        );
+      }
+
+      // Apply existing macro substitutions to the new macro value
+      // Track which macros we're expanding to detect circular references
+      let expandedValue = macroValue;
+      for (const [existingMacroName, existingMacroValue] of macros) {
+        const regex = new RegExp(`\\b${existingMacroName}\\b`, "g");
+        if (regex.test(expandedValue)) {
+          // Check if the existing macro value contains the current macro name (circular reference)
+          const circularRegex = new RegExp(`\\b${macroName}\\b`);
+          if (circularRegex.test(existingMacroValue)) {
+            throw new Error(
+              `Circular macro reference in file ${fileName} at line ${
+                lineNumber + 1
+              }: macro "${macroName}" creates circular dependency with "${existingMacroName}"`
+            );
+          }
+          expandedValue = expandedValue.replace(regex, existingMacroValue);
+        }
+      }
+
+      macros.set(macroName, expandedValue);
+      // Don't include the #define line in output
+      continue;
+    }
+
+    // Apply macro substitutions to the current line
+    let processedLine = line;
+    for (const [macroName, macroValue] of macros) {
+      // Use word boundaries to ensure we only replace whole identifiers
+      const regex = new RegExp(`\\b${macroName}\\b`, "g");
+      processedLine = processedLine.replace(regex, macroValue);
+    }
+
+    processedLines.push(processedLine);
+  }
+
+  return processedLines;
+}
+
+/**
  * TemplateParser is an implementation of the Parser interface that parses
  * WGSL template files and converts raw content into structured segments.
  * It identifies preprocessor directives, comments, and raw text segments.
@@ -169,7 +279,16 @@ export const parser: Parser = {
       });
     }
 
-    // STEP.3. Deal with empty lines:
+    // STEP.3. Parse #define macro directives and apply substitutions.
+    for (const [templateKey, template] of pass1Repo) {
+      const processedLines = parseMacroDirectives([...template.pass1], templateKey);
+      pass1Repo.set(templateKey, {
+        filePath: template.filePath,
+        pass1: processedLines,
+      });
+    }
+
+    // STEP.4. Deal with empty lines:
     // - Collapse multiple empty lines to single empty line
     // - Remove heading/trailing empty lines
     for (const [templateKey, template] of pass1Repo) {

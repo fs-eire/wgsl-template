@@ -255,8 +255,12 @@ function generateImpl(generatorState: GeneratorState) {
           case "param":
             output("expression", codeGenerator.param(matched));
             break;
-          case "macro":
-            output("expression", codeGenerator.macro(matched));
+          case "variable":
+            let variableName = matched;
+            if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
+              variableName = next.pattern.replace[0];
+            }
+            output("expression", codeGenerator.variable(variableName));
             break;
           case "method":
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {

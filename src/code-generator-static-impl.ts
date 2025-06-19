@@ -37,8 +37,8 @@ export const staticCodeGenerator: CodeGenerator = {
   param: function (name: string): string {
     return `__param_${name}`;
   },
-  macro: function (name: string): string {
-    return `__macro_${name}`;
+  variable: function (name: string): string {
+    return `__var_${name}`;
   },
   property: function (obj: string, propertyName: string): string {
     return `__var_${obj}.${propertyName}`;
