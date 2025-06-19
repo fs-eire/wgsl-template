@@ -4,7 +4,7 @@ import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
 import type { CodePattern } from "./types/code-pattern.js";
 import type { Generator, GenerateResult } from "./types/generator.js";
 import type { TemplateRepository } from "./types/loader.js";
-import type { TemplatePass1 } from "./types/template.js";
+import type { TemplateGenerateResult, TemplatePass1 } from "./types/template.js";
 
 interface FunctionCallState {
   readonly caller?: string; // Optional caller name, if this is a method call
@@ -94,50 +94,6 @@ function matchNextPattern(
 
   return earliestMatch;
 }
-
-export const generator: Generator = {
-  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, codeGenerator: CodeGenerator): GenerateResult {
-    const pass1 = repo.templates.get(filePath)?.pass1;
-    if (!pass1) {
-      throw new Error(`Template not found for file: ${filePath}`);
-    }
-
-    const generatorState: GeneratorState = {
-      pass1,
-      codeGenerator,
-      currentLine: 0,
-      currentColumn: 0,
-      preprocessIfStack: [],
-      patterns: [...DEFAULT_PATTERNS],
-      currentFunctionCall: [],
-      currentParenthesesState: 0,
-      result: [],
-      usedParams: new Set(),
-      usedVariables: new Set(),
-    };
-
-    generateImpl(generatorState);
-
-    if (generatorState.preprocessIfStack.length > 0) {
-      throw new Error(`Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(", ")}`);
-    }
-    if (generatorState.currentFunctionCall.length > 0) {
-      throw new Error(
-        `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
-      );
-    }
-
-    // merge results
-    // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
-    generatorState.result = mergeAdjacentSegments(generatorState.result);
-
-    return {
-      code: codeGenerator.emit(generatorState.result),
-      params: Array.from(generatorState.usedParams),
-      variables: Array.from(generatorState.usedVariables),
-    };
-  },
-};
 
 function generateImpl(generatorState: GeneratorState) {
   const { pass1, codeGenerator, preprocessIfStack, patterns, currentFunctionCall } = generatorState;
@@ -462,3 +418,70 @@ function generateImpl(generatorState: GeneratorState) {
     }
   }
 }
+
+const generate = (
+  filePath: string,
+  repo: TemplateRepository<TemplatePass1>,
+  codeGenerator: CodeGenerator
+): GenerateResult => {
+  const pass1 = repo.templates.get(filePath)?.pass1;
+  if (!pass1) {
+    throw new Error(`Template not found for file: ${filePath}`);
+  }
+
+  const generatorState: GeneratorState = {
+    pass1,
+    codeGenerator,
+    currentLine: 0,
+    currentColumn: 0,
+    preprocessIfStack: [],
+    patterns: [...DEFAULT_PATTERNS],
+    currentFunctionCall: [],
+    currentParenthesesState: 0,
+    result: [],
+    usedParams: new Set(),
+    usedVariables: new Set(),
+  };
+
+  generateImpl(generatorState);
+
+  if (generatorState.preprocessIfStack.length > 0) {
+    throw new Error(`Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(", ")}`);
+  }
+  if (generatorState.currentFunctionCall.length > 0) {
+    throw new Error(
+      `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
+    );
+  }
+
+  // merge results
+  // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
+  generatorState.result = mergeAdjacentSegments(generatorState.result);
+
+  return {
+    code: codeGenerator.emit(generatorState.result),
+    params: Array.from(generatorState.usedParams),
+    variables: Array.from(generatorState.usedVariables),
+  };
+};
+
+export const generator: Generator = {
+  generate,
+
+  generateDirectory(repo, codeGenerator) {
+    const result = new Map<string, TemplateGenerateResult>();
+
+    for (const [filePath, template] of repo.templates) {
+      const generateResult = generate(filePath, repo, codeGenerator);
+      result.set(filePath, {
+        filePath: template.filePath,
+        generateResult,
+      });
+    }
+
+    return {
+      basePath: repo.basePath,
+      templates: result,
+    };
+  },
+};

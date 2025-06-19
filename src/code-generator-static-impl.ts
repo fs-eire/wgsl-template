@@ -1,3 +1,4 @@
+import type { SourceBuilder } from "./types/builder";
 import type { CodeGenerator, CodeSegment } from "./types/code-generator";
 
 const renderParam = (param: CodeSegment[]): string => {
@@ -19,7 +20,7 @@ const renderParam = (param: CodeSegment[]): string => {
   }
 };
 
-export const staticCodeGenerator: CodeGenerator = {
+export const staticCodeGenerator: CodeGenerator & SourceBuilder = {
   emit: function (code: CodeSegment[]): string {
     return code
       .map((segment) => {
@@ -66,5 +67,12 @@ export const staticCodeGenerator: CodeGenerator = {
     }
     code.push(")");
     return code.join("");
+  },
+
+  build(repo, _options) {
+    return {
+      basePath: repo.basePath,
+      templates: new Map(),
+    };
   },
 };

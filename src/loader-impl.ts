@@ -23,6 +23,15 @@ async function loadTemplatesRecursively(
 
     for (const entry of entries) {
       const fullPath = path.join(directory, entry);
+      const resolvedPath = path.resolve(fullPath);
+
+      // Security check: ensure the resolved path is within the base directory
+      const resolvedBasePath = path.resolve(basePath);
+      if (!resolvedPath.startsWith(resolvedBasePath + path.sep) && resolvedPath !== resolvedBasePath) {
+        console.warn(`Skipping file outside base directory: ${fullPath}`);
+        continue;
+      }
+
       const entryStat = await stat(fullPath);
 
       if (entryStat.isDirectory()) {
@@ -32,6 +41,7 @@ async function loadTemplatesRecursively(
         // Load template file
         await loadTemplateFile(fullPath, basePath, templates);
       }
+      // Skip symbolic links and other special file types for security
     }
   } catch (error) {
     throw new Error(`Error scanning directory ${directory}: ${(error as Error).message}`);
@@ -50,6 +60,14 @@ async function loadTemplateFile(
   templates: Map<string, TemplatePass0>
 ): Promise<void> {
   try {
+    const resolvedFilePath = path.resolve(filePath);
+    const resolvedBasePath = path.resolve(basePath);
+
+    // Security check: ensure the file is within the base directory
+    if (!resolvedFilePath.startsWith(resolvedBasePath + path.sep) && resolvedFilePath !== resolvedBasePath) {
+      throw new Error(`Security violation: attempted to read file outside base directory: ${filePath}`);
+    }
+
     const content = await readFile(filePath, "utf8");
     const lines = content.split(/\r?\n/);
     // Calculate relative path from base directory
@@ -58,7 +76,7 @@ async function loadTemplateFile(
     const templateName = relativePath.replace(/\\/g, "/");
 
     const template: TemplatePass0 = {
-      filePath: path.resolve(filePath),
+      filePath: resolvedFilePath,
       raw: lines,
     };
 
