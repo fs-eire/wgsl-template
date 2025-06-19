@@ -1,0 +1,18 @@
+emit("\n");
+emit("fn test_function() {\n");
+emit("    let tensor_rank = ");
+emit(variable["input_tensor"].Rank());
+emit(";\n");
+emit("    let output_rank = ");
+emit(variable["output_data"].Rank());
+emit(";\n");
+emit("\n");
+emit("    if (tensor_rank == 3) {\n");
+emit("        let dims = tensor_rank + output_rank;\n");
+emit("        return dims;\n");
+emit("    }\n");
+emit("\n");
+emit("    return ");
+emit(variable["input_tensor"].Rank());
+emit(";\n");
+emit("}\n");

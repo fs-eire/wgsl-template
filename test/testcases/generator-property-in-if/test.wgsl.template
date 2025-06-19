@@ -1,0 +1,21 @@
+#use .rank
+#param MIN_RANK
+
+fn process_tensor() {
+#if input_tensor.rank > MIN_RANK
+    let dims = input_tensor.rank;
+    return dims * 2;
+#elif output_tensor.rank == 3
+    return output_tensor.rank + 1;
+#else
+    return 1;
+#endif
+}
+
+fn check_compatibility() {
+#if tensor_a.rank == tensor_b.rank
+    return true;
+#else
+    return false;
+#endif
+}

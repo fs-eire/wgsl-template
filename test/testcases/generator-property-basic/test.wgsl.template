@@ -1,0 +1,13 @@
+#use .rank
+
+fn test_function() {
+    let tensor_rank = input_tensor.rank;
+    let output_rank = output_data.rank;
+    
+    if (tensor_rank == 3) {
+        let dims = tensor_rank + output_rank;
+        return dims;
+    }
+    
+    return input_tensor.rank;
+}

@@ -1,0 +1,23 @@
+emit("\n");
+emit("fn process_tensor() {\n");
+if (variable["input_tensor"].Rank() > param["MIN_RANK"]) {
+emit("    let dims = ");
+emit(variable["input_tensor"].Rank());
+emit(";\n");
+emit("    return dims * 2;\n");
+} else if (variable["output_tensor"].Rank() == 3) {
+emit("    return ");
+emit(variable["output_tensor"].Rank());
+emit(" + 1;\n");
+} else {
+emit("    return 1;\n");
+}
+emit("}\n");
+emit("\n");
+emit("fn check_compatibility() {\n");
+if (variable["tensor_a"].Rank() == variable["tensor_b"].Rank()) {
+emit("    return true;\n");
+} else {
+emit("    return false;\n");
+}
+emit("}\n");

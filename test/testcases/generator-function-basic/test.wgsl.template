@@ -1,0 +1,7 @@
+#use .rank
+#use getElementAt
+#param CHANNEL
+
+fn process_data() {
+    return getElementAt(buffer, CHANNEL - 1u, buffer.rank);
+}

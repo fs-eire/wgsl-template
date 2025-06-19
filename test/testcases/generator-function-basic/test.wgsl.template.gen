@@ -1,0 +1,6 @@
+emit("\n");
+emit("fn process_data() {\n");
+emit("    return ");
+emit(GetElementAt("buffer", `${param["CHANNEL"]} - 1u`, variable["buffer"].Rank()));
+emit(";\n");
+emit("}\n");

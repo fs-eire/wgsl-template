@@ -1,5 +1,29 @@
 import type { CodeGenerator, CodeSegment } from "../src/types/code-generator";
 
+const renderParam = (param: CodeSegment[]): string => {
+  const render = (segment: CodeSegment): string => {
+    switch (segment.type) {
+      case "code":
+        return segment.content;
+      default:
+        return `\${${segment.content}}`;
+    }
+  };
+
+  if (param.length === 0) {
+    return "";
+  } else if (param.length === 1) {
+    switch (param[0].type) {
+      case "code":
+        return JSON.stringify(param[0].content);
+      default:
+        return param[0].content;
+    }
+  } else {
+    return `\`${param.map(render).join("")}\``;
+  }
+};
+
 export const testCodeGenerator: CodeGenerator = {
   emit: function (code: CodeSegment[]): string {
     return code
@@ -35,11 +59,20 @@ export const testCodeGenerator: CodeGenerator = {
   macro: function (_name: string): string {
     throw new Error("Function not implemented.");
   },
-  property: function (_obj: string, _propertyName: string): string {
-    throw new Error("Function not implemented.");
+  property: function (obj: string, propertyName: string): string {
+    return `variable[${JSON.stringify(obj)}].${propertyName}`;
   },
-  function: function (_name: string, _params: CodeSegment[][]): string {
-    throw new Error("Function not implemented.");
+  function: function (name: string, params: CodeSegment[][]): string {
+    const code = [name, "("];
+
+    for (let i = 0; i < params.length; i++) {
+      code.push(renderParam(params[i]));
+      if (i < params.length - 1) {
+        code.push(", ");
+      }
+    }
+    code.push(")");
+    return code.join("");
   },
   method: function (_obj: string, _methodName: string, _params: CodeSegment[][]): string {
     throw new Error("Function not implemented.");

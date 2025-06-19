@@ -31,6 +31,27 @@ interface GeneratorState {
   result: CodeSegment[];
 }
 
+/**
+ * Merges adjacent segments of the same type (raw or code) to reduce the number of segments.
+ * This optimization helps reduce the final emit output size.
+ */
+function mergeAdjacentSegments(segments: CodeSegment[]): CodeSegment[] {
+  return segments.reduce((acc: CodeSegment[], segment: CodeSegment) => {
+    if (
+      acc.length > 0 &&
+      acc[acc.length - 1].type === segment.type &&
+      (segment.type === "raw" || segment.type === "code")
+    ) {
+      // Merge adjacent raw or code segments
+      acc[acc.length - 1].content += segment.content;
+    } else {
+      // Otherwise, just push the segment
+      acc.push(segment);
+    }
+    return acc;
+  }, []);
+}
+
 function matchNextPattern(
   content: string,
   patterns: CodePattern[]
@@ -104,20 +125,7 @@ export const generator: Generator = {
 
     // merge results
     // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
-    generatorState.result = generatorState.result.reduce((acc: CodeSegment[], segment: CodeSegment) => {
-      if (
-        acc.length > 0 &&
-        acc[acc.length - 1].type === segment.type &&
-        (segment.type === "raw" || segment.type === "code")
-      ) {
-        // Merge adjacent raw or code segments
-        acc[acc.length - 1].content += segment.content;
-      } else {
-        // Otherwise, just push the segment
-        acc.push(segment);
-      }
-      return acc;
-    }, []);
+    generatorState.result = mergeAdjacentSegments(generatorState.result);
 
     return codeGenerator.emit(generatorState.result);
   },
@@ -186,7 +194,7 @@ function generateImpl(generatorState: GeneratorState) {
             } else if (matched === ",") {
               if (
                 currentFunctionCall.length > 0 &&
-                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState === currentParenthesesState
+                currentFunctionCall[currentFunctionCall.length - 1].parenthesesState + 1 === currentParenthesesState
               ) {
                 // End of current parameter, push it to params array
                 const call = currentFunctionCall[currentFunctionCall.length - 1];
@@ -214,11 +222,21 @@ function generateImpl(generatorState: GeneratorState) {
                   if (call.currentParam.length > 0) {
                     call.params.push(call.currentParam);
                   }
+                  const params = call.params.map((p) => mergeAdjacentSegments(p));
+                  // Clean up empty code segments in parameters
+                  for (const param of params) {
+                    if (param.at(-1)?.type === "code" && param.at(-1)!.content.trim() === "") {
+                      param.pop();
+                    }
+                    if (param.at(0)?.type === "code" && param.at(0)!.content.trim() === "") {
+                      param.shift();
+                    }
+                  }
                   output(
                     "expression",
                     call.caller
-                      ? codeGenerator.method(call.caller, call.name, call.params)
-                      : codeGenerator.function(call.name, call.params)
+                      ? codeGenerator.method(call.caller, call.name, params)
+                      : codeGenerator.function(call.name, params)
                   );
                 }
               } else {
@@ -255,7 +273,6 @@ function generateImpl(generatorState: GeneratorState) {
             });
 
             currentParenthesesState++;
-            currentColumn++; // Skip the opening parenthesis
             break;
           case "property":
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
@@ -319,13 +336,13 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
-        
+
         // Check if there's a condition after #if
         const condition = line.slice(4).trim();
         if (condition.length === 0) {
           throw new Error(`Empty condition in #if directive at line ${currentLine + 1}`);
         }
-        
+
         currentColumn = 4;
         preprocessIfStack.push("if");
         output("raw", "if (");
@@ -354,13 +371,13 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
-        
+
         // Check if there's a condition after #elif
         const condition = line.slice(6).trim();
         if (condition.length === 0) {
           throw new Error(`Empty condition in #elif directive at line ${currentLine + 1}`);
         }
-        
+
         currentColumn = 6;
         preprocessIfStack[preprocessIfStack.length - 1] = "elif";
         output("raw", "} else if (");
