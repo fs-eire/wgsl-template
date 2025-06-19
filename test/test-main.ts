@@ -193,6 +193,7 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
   // Summary
   const passed = results.filter((r) => r.passed).length;
   const failed = results.filter((r) => !r.passed).length;
+  const failedResults = results.filter((r) => !r.passed);
 
   console.log(`\n📊 Test Summary:`);
   console.log(`✅ Passed: ${passed}`);
@@ -200,6 +201,10 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
   console.log(`📋 Total:  ${results.length}`);
 
   if (failed > 0) {
+    console.log(`\n🔥 Failed Tests Summary:`);
+    failedResults.forEach((result, index) => {
+      console.log(`${index + 1}. ${result.name} - ${result.error}`);
+    });
     process.exit(1);
   }
 }
