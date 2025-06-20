@@ -7,7 +7,7 @@
         "dynamic": {
           "expectedParams": ["BUFFER_SIZE"]
         },
-        "static-cpp": {
+        "static-cpp-literal": {
           "expectedParams": ["BUFFER_SIZE"]
         }
       }
@@ -17,7 +17,7 @@
         "dynamic": {
           "expectedParams": []
         },
-        "static-cpp": {
+        "static-cpp-literal": {
           "expectedParams": []
         }
       }

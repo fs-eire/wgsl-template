@@ -56,10 +56,35 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
   }
 
   try {
-    // Step 3: Run generator for each entry
+    // Step 3: Create generator instances once per test case
+    const generatorInstances = new Map<string, ReturnType<typeof resolveCodeGenerator>>();
+
+    // Collect unique generators from all entries
+    const uniqueGenerators = new Set<string>();
     for (const entryConfig of entriesToProcess) {
-      // Resolve the code generator from the target for this specific entry
-      const codeGenerator = resolveCodeGenerator(entryConfig.generator);
+      uniqueGenerators.add(entryConfig.generator);
+    }
+
+    // Create generator instances
+    for (const generatorName of uniqueGenerators) {
+      const codeGenerator = resolveCodeGenerator(generatorName);
+      generatorInstances.set(generatorName, codeGenerator);
+
+      if (debug) {
+        console.log(`   🔧 Created generator instance: ${generatorName}`);
+      }
+    }
+
+    if (debug) {
+      console.log(
+        `   🔄 Reusing ${generatorInstances.size} generator instance(s) across ${entriesToProcess.length} entries`
+      );
+    }
+
+    // Step 4: Run generator for each entry
+    for (const entryConfig of entriesToProcess) {
+      // Get the pre-created generator instance
+      const codeGenerator = generatorInstances.get(entryConfig.generator)!;
 
       try {
         // Generate the actual output

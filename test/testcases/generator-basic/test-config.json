@@ -5,7 +5,7 @@
     "test.wgsl.template": {
       "generators": {
         "dynamic": {},
-        "static-cpp": {}
+        "static-cpp-literal": {}
       }
     }
   }

@@ -8,7 +8,7 @@
           "expectedParams": ["dim_value_zero", "is_float16", "pad_mode"],
           "expectedVariables": ["MAIN", "output"]
         },
-        "static-cpp": {
+        "static-cpp-literal": {
           "expectedParams": ["dim_value_zero", "is_float16", "pad_mode"],
           "expectedVariables": ["MAIN", "output"]
         }

@@ -5,7 +5,9 @@ import type { SourceBuilder, CodeGenerator } from "./types.js";
 export function resolveCodeGenerator(generator: string): CodeGenerator & SourceBuilder {
   switch (generator) {
     case "static-cpp":
-      return new StaticCodeGenerator();
+      return new StaticCodeGenerator(true);
+    case "static-cpp-literal":
+      return new StaticCodeGenerator(false);
     case "dynamic":
       return new DynamicCodeGenerator();
     default:
