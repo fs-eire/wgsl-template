@@ -16,25 +16,25 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
   const entriesToProcess: Array<{
     templatePath: string;
-    target: string;
+    generator: string;
     expectsError?: boolean | string;
     expectedParams?: string[];
     expectedVariables?: string[];
   }> = [];
 
-  // Flatten the entries with their targets
+  // Flatten the entries with their generators
   for (const [templatePath, entryConfig] of Object.entries(config.entries)) {
-    if (!entryConfig.targets || Object.keys(entryConfig.targets).length === 0) {
-      throw new Error(`Entry "${templatePath}" is missing required "targets" property`);
+    if (!entryConfig.generators || Object.keys(entryConfig.generators).length === 0) {
+      throw new Error(`Entry "${templatePath}" is missing required "generators" property`);
     }
 
-    for (const [targetName, targetConfig] of Object.entries(entryConfig.targets)) {
+    for (const [generatorName, generatorConfig] of Object.entries(entryConfig.generators)) {
       entriesToProcess.push({
         templatePath,
-        target: targetName,
-        expectsError: targetConfig.expectsError,
-        expectedParams: targetConfig.expectedParams,
-        expectedVariables: targetConfig.expectedVariables,
+        generator: generatorName,
+        expectsError: generatorConfig.expectsError,
+        expectedParams: generatorConfig.expectedParams,
+        expectedVariables: generatorConfig.expectedVariables,
       });
     }
   }
@@ -59,7 +59,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
     // Step 3: Run generator for each entry
     for (const entryConfig of entriesToProcess) {
       // Resolve the code generator from the target for this specific entry
-      const codeGenerator = resolveCodeGenerator(entryConfig.target);
+      const codeGenerator = resolveCodeGenerator(entryConfig.generator);
 
       try {
         // Generate the actual output
@@ -71,12 +71,15 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
           return {
             name: testCase.name,
             passed: false,
-            error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): Expected an error to be thrown, but the generation completed successfully`,
+            error: `Entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}): Expected an error to be thrown, but the generation completed successfully`,
           };
         }
 
         // Load expected output from target-specific .gen file
-        const expectedFilePath = path.join(testCase.directory, `${entryConfig.templatePath}.${entryConfig.target}.gen`);
+        const expectedFilePath = path.join(
+          testCase.directory,
+          `${entryConfig.templatePath}.${entryConfig.generator}.gen`
+        );
         let expectedOutput: string;
 
         try {
@@ -86,7 +89,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
         }
 
         if (debug) {
-          console.log(`   🐛 Debug - Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}):`);
+          console.log(`   🐛 Debug - Entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}):`);
           console.log(`   Expected file: ${expectedFilePath}`);
           console.log(`   Actual output length: ${actualOutput.length}`);
           console.log(`   Expected output length: ${expectedOutput.length}`);
@@ -125,7 +128,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
           if (debug) {
             console.log(
-              `   ✅ All ${actualLines.length} lines match for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+              `   ✅ All ${actualLines.length} lines match for entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator})`
             );
           }
 
@@ -165,7 +168,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
             }
           }
         } catch (error) {
-          const errorMessage = `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): ${(error as Error).message}`;
+          const errorMessage = `Entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}): ${(error as Error).message}`;
 
           if (debug) {
             console.log(`   🐛 Debug - Test failed, outputting full results:`);
@@ -189,7 +192,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
           if (debug) {
             console.log(
-              `🐛 Debug: Expected error caught for entry "${entryConfig.templatePath}" (target: ${entryConfig.target}):`
+              `🐛 Debug: Expected error caught for entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}):`
             );
             console.log(`   Error type: ${(error as Error).constructor.name}`);
             console.log(`   Error message: ${errorMessage}`);
@@ -203,7 +206,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
             if (errorMessage.includes(entryConfig.expectsError)) {
               if (debug) {
                 console.log(
-                  `   ✅ Error message matches expected pattern for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+                  `   ✅ Error message matches expected pattern for entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator})`
                 );
               }
               // Continue to next entry - this one passed
@@ -212,14 +215,14 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
               return {
                 name: testCase.name,
                 passed: false,
-                error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): Expected error message to contain "${entryConfig.expectsError}", but got: ${errorMessage}`,
+                error: `Entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}): Expected error message to contain "${entryConfig.expectsError}", but got: ${errorMessage}`,
               };
             }
           } else {
             // expectsError is true, so any error is acceptable for this entry
             if (debug) {
               console.log(
-                `   ✅ Any error was expected and received for entry "${entryConfig.templatePath}" (target: ${entryConfig.target})`
+                `   ✅ Any error was expected and received for entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator})`
               );
             }
             // Continue to next entry - this one passed
@@ -231,7 +234,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
         return {
           name: testCase.name,
           passed: false,
-          error: `Entry "${entryConfig.templatePath}" (target: ${entryConfig.target}): ${(error as Error).message}`,
+          error: `Entry "${entryConfig.templatePath}" (generator: ${entryConfig.generator}): ${(error as Error).message}`,
         };
       }
     }

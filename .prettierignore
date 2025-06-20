@@ -8,7 +8,9 @@ lib/
 
 # Test files (preserve original formatting for test data)
 test/testcases/**/*.wgsl.*
+test/testcases/**/expected/
 
 # Generated files
+**/gen/
 *.log
 .DS_Store

@@ -3,7 +3,7 @@
   "description": "Test basic function pattern with getElementAt",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": false
         }

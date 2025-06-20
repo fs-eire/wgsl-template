@@ -3,7 +3,7 @@
   "description": "Test basic parameter substitution in template generation",
   "entries": {
     "compute-param.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectedParams": ["BUFFER_SIZE"]
         },
@@ -13,7 +13,7 @@
       }
     },
     "compute-no-param.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectedParams": []
         },

@@ -3,7 +3,7 @@
   "description": "Test error handling for preprocessor directive inside function call",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Preprocessor directive inside function call"
         }

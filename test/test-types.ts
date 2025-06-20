@@ -2,7 +2,6 @@
 export interface TestCase {
   name: string;
   directory: string;
-  templateFiles: string[];
   expectedOutput?: string;
   config: TestConfig;
 }
@@ -32,14 +31,17 @@ export interface ParserTestConfig extends BaseTestConfig {
   expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
 }
 
-// E2E test configuration
-export interface E2ETestConfig extends BaseTestConfig {
-  type: "e2e";
+// Build test configuration (formerly E2E)
+export interface BuildTestConfig extends BaseTestConfig {
+  type: "build";
   templateExt?: string;
-  generator: string;
+  generators: Record<
+    string,
+    {
+      expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
+    }
+  >;
   namespaces?: string[];
-  params?: Record<string, string | number | boolean>; // Parameters to pass to the generator
-  expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
 }
 
 // Generator test configuration
@@ -49,7 +51,7 @@ export interface GeneratorTestConfig extends BaseTestConfig {
   entries: Record<
     string,
     {
-      targets: Record<
+      generators: Record<
         string,
         {
           expectsError?: boolean | string;
@@ -62,7 +64,7 @@ export interface GeneratorTestConfig extends BaseTestConfig {
 }
 
 // Union type for all test configurations
-export type TestConfig = LoaderTestConfig | ParserTestConfig | E2ETestConfig | GeneratorTestConfig;
+export type TestConfig = LoaderTestConfig | ParserTestConfig | BuildTestConfig | GeneratorTestConfig;
 
 export interface TestResult {
   name: string;

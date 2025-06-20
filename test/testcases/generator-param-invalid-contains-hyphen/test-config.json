@@ -3,7 +3,7 @@
   "description": "Test error handling for parameter identifier containing hyphen",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Invalid parameter identifier"
         }

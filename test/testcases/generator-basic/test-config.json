@@ -3,7 +3,7 @@
   "description": "Basic generator test, using the test generator",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {},
         "static-cpp": {}
       }

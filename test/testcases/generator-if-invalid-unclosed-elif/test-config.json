@@ -3,7 +3,7 @@
   "description": "Test error handling for unclosed #elif directive",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Unclosed preprocessor directive: elif"
         }

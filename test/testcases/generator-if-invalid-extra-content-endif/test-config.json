@@ -3,7 +3,7 @@
   "description": "Test error handling for extra content after #endif",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Unexpected content after #endif"
         }

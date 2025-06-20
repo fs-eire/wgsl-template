@@ -3,7 +3,7 @@
   "description": "Test error handling for #elif without preceding #if",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "#elif mismatch"
         }

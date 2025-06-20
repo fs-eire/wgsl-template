@@ -3,7 +3,7 @@
   "description": "Test preprocessor #if, #elif, #else, #endif directive functionality with multiple conditions",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {}
       }
     }

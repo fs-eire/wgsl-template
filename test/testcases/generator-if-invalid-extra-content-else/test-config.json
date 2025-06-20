@@ -3,7 +3,7 @@
   "description": "Test error handling for extra content after #else",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Unexpected content after #else"
         }

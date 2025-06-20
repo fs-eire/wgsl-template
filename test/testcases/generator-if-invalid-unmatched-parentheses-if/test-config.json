@@ -3,7 +3,7 @@
   "description": "Test error handling for unmatched parentheses at end of #if line",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectsError": "Unmatched parentheses in preprocessor expression"
         }

@@ -3,7 +3,7 @@
   "description": "Test parameter substitution with multiple parameters declared in a single #param line",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectedParams": ["BUFFER_SIZE", "WORKGROUP_SIZE", "ENABLE_OPTIMIZATION"]
         }

@@ -8,7 +8,7 @@ import type { TestCase, TestConfig, TestResult } from "./test-types.js";
 // Import test runners
 import { runLoaderTest } from "./test-runner-loader.js";
 import { runParserTest } from "./test-runner-parser.js";
-import { runE2ETest, runE2ETestWithFolders } from "./test-runner-e2e.js";
+import { runBuildTest } from "./test-runner-build.js";
 import { runGeneratorTest } from "./test-runner-generator.js";
 
 // Test case discovery
@@ -56,26 +56,10 @@ async function loadTestCase(name: string, directory: string): Promise<TestCase> 
   } catch (error) {
     throw new Error(`Failed to load test config: ${(error as Error).message}`);
   }
-  // Discover template files
-  const files = await readdir(directory);
-  let expectedExt = ".wgsl.template";
-
-  if (config.type === "loader" && config.loaderOptions?.ext) {
-    expectedExt = config.loaderOptions.ext;
-  } else if (config.type === "e2e" && config.templateExt) {
-    expectedExt = config.templateExt;
-  }
-
-  const templateFiles = files.filter((file) => file.endsWith(expectedExt));
-  // Only require template files for e2e tests (loader and parser tests can be empty)
-  if (templateFiles.length === 0 && config.type === "e2e") {
-    throw new Error("No template files found");
-  }
 
   return {
     name,
     directory,
-    templateFiles,
     config,
   };
 }
@@ -88,21 +72,8 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
         return await runLoaderTest(testCase, debug);
       case "parser":
         return await runParserTest(testCase, debug);
-      case "e2e":
-        // Check if this is a new-style E2E test with src/gen/expected folders
-        const srcDir = path.join(testCase.directory, "src");
-        const expectedDir = path.join(testCase.directory, "expected");
-
-        try {
-          await stat(srcDir);
-          await stat(expectedDir);
-          // New folder structure detected, use the new E2E test runner
-          await runE2ETestWithFolders(testCase.name, testCase.directory);
-          return { name: testCase.name, passed: true };
-        } catch {
-          // Fall back to old E2E test runner
-          return await runE2ETest(testCase, debug);
-        }
+      case "build":
+        return await runBuildTest(testCase, debug);
       case "generator":
         return await runGeneratorTest(testCase, debug);
       default:
@@ -155,35 +126,52 @@ async function runAllTests(specificTestCase?: string, debug?: boolean): Promise<
 
   const testCasesDir = path.join(projectRoot, "test", "testcases");
 
-  console.log("🔍 Discovering test cases...");
-  let testCases = await discoverTestCases(testCasesDir);
+  let testCases: TestCase[] = [];
+
   if (specificTestCase) {
-    // First try to find the test case (including disabled ones)
-    const allTestCases = await discoverTestCases(testCasesDir, true);
-    const foundTestCase = allTestCases.find((tc) => tc.name === specificTestCase);
+    // Directly load the specific test case without scanning all directories
+    const specificTestDir = path.join(testCasesDir, specificTestCase);
 
-    if (!foundTestCase) {
-      console.log(`❌ Test case "${specificTestCase}" not found!`);
-      console.log("Available test cases:");
-      allTestCases.forEach((tc) => {
-        const disabledInfo = tc.config.disabled
-          ? ` (disabled: ${typeof tc.config.disabled === "string" ? tc.config.disabled : "no reason"})`
-          : "";
-        console.log(`  - ${tc.name}${disabledInfo}`);
-      });
+    try {
+      const dirStat = await stat(specificTestDir);
+      if (!dirStat.isDirectory()) {
+        throw new Error(`Not a directory: ${specificTestDir}`);
+      }
+
+      const testCase = await loadTestCase(specificTestCase, specificTestDir);
+
+      // Check if the test case is disabled
+      if (testCase.config.disabled) {
+        const reason = typeof testCase.config.disabled === "string" ? testCase.config.disabled : "no reason specified";
+        console.log(`❌ Cannot run disabled test case "${specificTestCase}": ${reason}`);
+        process.exit(1);
+      }
+
+      testCases = [testCase];
+      console.log(`🎯 Running specific test case: ${specificTestCase}`);
+    } catch (error) {
+      console.log(`❌ Test case "${specificTestCase}" not found or failed to load: ${(error as Error).message}`);
+
+      // Fall back to showing available test cases
+      console.log("🔍 Available test cases:");
+      try {
+        const allTestCases = await discoverTestCases(testCasesDir, true);
+        allTestCases.forEach((tc) => {
+          const disabledInfo = tc.config.disabled
+            ? ` (disabled: ${typeof tc.config.disabled === "string" ? tc.config.disabled : "no reason"})`
+            : "";
+          console.log(`  - ${tc.name}${disabledInfo}`);
+        });
+      } catch (discoverError) {
+        console.log(`Failed to discover test cases: ${(discoverError as Error).message}`);
+      }
+
       process.exit(1);
     }
-
-    // Check if the found test case is disabled
-    if (foundTestCase.config.disabled) {
-      const reason =
-        typeof foundTestCase.config.disabled === "string" ? foundTestCase.config.disabled : "no reason specified";
-      console.log(`❌ Cannot run disabled test case "${specificTestCase}": ${reason}`);
-      process.exit(1);
-    }
-
-    testCases = [foundTestCase];
-    console.log(`🎯 Running specific test case: ${specificTestCase}`);
+  } else {
+    // Discover all test cases when no specific test is requested
+    console.log("🔍 Discovering test cases...");
+    testCases = await discoverTestCases(testCasesDir);
   }
 
   if (testCases.length === 0) {

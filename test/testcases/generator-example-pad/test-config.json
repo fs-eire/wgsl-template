@@ -3,7 +3,7 @@
   "description": "Test complex padding operation template with multiple conditional parameters and pad modes",
   "entries": {
     "pad.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {
           "expectedParams": ["dim_value_zero", "is_float16", "pad_mode"],
           "expectedVariables": ["MAIN", "output"]

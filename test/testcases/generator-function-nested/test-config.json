@@ -3,7 +3,7 @@
   "description": "Test nested function and method calls with offsetToIndices as parameter to setByIndices",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {}
       }
     }

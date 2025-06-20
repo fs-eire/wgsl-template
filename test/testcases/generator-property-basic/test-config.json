@@ -3,7 +3,7 @@
   "description": "Test basic property access pattern with .rank",
   "entries": {
     "test.wgsl.template": {
-      "targets": {
+      "generators": {
         "dynamic": {}
       }
     }
