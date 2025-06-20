@@ -1,6 +1,4 @@
-import type { Parser } from "./types/parser.js";
-import type { TemplateRepository } from "./types/loader.js";
-import type { TemplatePass1, TemplatePass0 } from "./types/template.js";
+import type { Parser, TemplateRepository, TemplatePass1, TemplatePass0 } from "./types.js";
 
 /**
  * Parses raw content of a template file and remove comments.
@@ -13,8 +11,7 @@ function parseComments(raw: readonly string[]): string[] {
   const rawWithoutComments: string[] = [];
   let inMultiLineComment = false;
 
-  for (let lineNumber = 0; lineNumber < raw.length; lineNumber++) {
-    const line = raw[lineNumber];
+  for (const line of raw) {
     let processedLine = "";
     let i = 0;
 
@@ -132,7 +129,7 @@ function parsePreprocessorIncludeDirectives(
  * @returns Array of lines with macros defined and substituted
  */
 function parseMacroDirectives(lines: string[], fileName: string): string[] {
-  const macros: Map<string, string> = new Map();
+  const macros = new Map<string, string>();
   const processedLines: string[] = [];
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
@@ -247,15 +244,15 @@ export const parser: Parser = {
    * @param repo The repository containing raw template data
    * @returns A new repository with parsed segments added to the specified template
    */ parse(repo: TemplateRepository<TemplatePass0>): TemplateRepository<TemplatePass1> {
-    const pass1Repo: Map<string, TemplatePass1> = new Map();
+    const pass1Repo = new Map<string, TemplatePass1>();
 
-    const parseState: Map<
+    const parseState = new Map<
       string,
       {
         lines: string[];
         includeProcessed: boolean;
       }
-    > = new Map();
+    >();
 
     // STEP.1. Parse comments. Segments now contains:
     //         - Raw segments

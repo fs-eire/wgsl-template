@@ -1,4 +1,4 @@
-import type { CodePattern } from "./types/code-pattern.js";
+import type { CodePattern } from "./types.js";
 
 //
 // The default patterns for code generation that are automatically included
@@ -127,7 +127,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
   ],
 ];
 
-const PATTERN_MAP: Map<string, CodePattern> = new Map([
+const PATTERN_MAP = new Map<string, CodePattern>([
   ...BUILT_IN_PATTERNS,
   ...INDICES_HELPER_PATTERNS,
   //TODO: add more patterns as needed

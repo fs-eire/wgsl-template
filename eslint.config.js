@@ -25,11 +25,19 @@ export default [
       "@typescript-eslint": tsPlugin,
     },
     rules: {
+      // TypeScript recommended rules
       ...tsPlugin.configs.recommended.rules,
+      // TypeScript strict rules (optional - can be commented out if too strict)
+      ...tsPlugin.configs.strict.rules,
+      // TypeScript stylistic rules
+      ...tsPlugin.configs.stylistic.rules,
+
+      // Custom overrides
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "@typescript-eslint/explicit-function-return-type": "off",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-non-null-assertion": "off",
       "@typescript-eslint/consistent-type-imports": [
         "error",
         {
@@ -39,6 +47,7 @@ export default [
         },
       ],
       "@typescript-eslint/no-import-type-side-effects": "error",
+      "no-duplicate-imports": "error",
       "prefer-const": "error",
       "no-var": "error",
     },

@@ -14,13 +14,13 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
     throw new Error("entries must be an object with template file paths as keys");
   }
 
-  const entriesToProcess: Array<{
+  const entriesToProcess: {
     templatePath: string;
     generator: string;
     expectsError?: boolean | string;
     expectedParams?: string[];
     expectedVariables?: string[];
-  }> = [];
+  }[] = [];
 
   // Flatten the entries with their generators
   for (const [templatePath, entryConfig] of Object.entries(config.entries)) {

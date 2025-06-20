@@ -12,7 +12,7 @@ import { runBuildTest } from "./test-runner-build.js";
 import { runGeneratorTest } from "./test-runner-generator.js";
 
 // Test case discovery
-async function discoverTestCases(testCasesDir: string, includeDisabled: boolean = false): Promise<TestCase[]> {
+async function discoverTestCases(testCasesDir: string, includeDisabled = false): Promise<TestCase[]> {
   const testCases: TestCase[] = [];
 
   try {

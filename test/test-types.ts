@@ -19,10 +19,10 @@ export interface LoaderTestConfig extends BaseTestConfig {
   loaderOptions?: {
     ext?: string;
   };
-  expectedFiles?: Array<{
+  expectedFiles?: {
     path: string;
     content: string[];
-  }>;
+  }[];
 }
 
 // Parser test configuration

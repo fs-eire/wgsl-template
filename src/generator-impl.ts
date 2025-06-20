@@ -1,10 +1,15 @@
 import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl.js";
 
-import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
-import type { CodePattern } from "./types/code-pattern.js";
-import type { Generator, GenerateResult } from "./types/generator.js";
-import type { TemplateRepository } from "./types/loader.js";
-import type { TemplateGenerateResult, TemplatePass1 } from "./types/template.js";
+import type {
+  CodeGenerator,
+  CodeSegment,
+  CodePattern,
+  Generator,
+  GenerateResult,
+  TemplateRepository,
+  TemplatePass2,
+  TemplatePass1,
+} from "./types.js";
 
 interface FunctionCallState {
   readonly caller?: string; // Optional caller name, if this is a method call
@@ -468,8 +473,8 @@ const generate = (
 export const generator: Generator = {
   generate,
 
-  generateDirectory(repo, codeGenerator) {
-    const result = new Map<string, TemplateGenerateResult>();
+  generateDirectory(repo, codeGenerator): TemplateRepository<TemplatePass2> {
+    const result = new Map<string, TemplatePass2>();
 
     for (const [filePath, template] of repo.templates) {
       const generateResult = generate(filePath, repo, codeGenerator);

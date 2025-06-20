@@ -1,5 +1,12 @@
-import type { SourceBuilder } from "./types/builder.js";
-import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
+import type {
+  SourceBuilder,
+  CodeGenerator,
+  CodeSegment,
+  SourceBuilderOptions,
+  TemplateRepository,
+  TemplatePass2,
+  TemplateBuildResult,
+} from "./types.js";
 
 const renderParam = (param: CodeSegment[]): string => {
   const render = (segment: CodeSegment): string => {
@@ -20,8 +27,8 @@ const renderParam = (param: CodeSegment[]): string => {
   }
 };
 
-export const staticCodeGenerator: CodeGenerator & SourceBuilder = {
-  emit: function (code: CodeSegment[]): string {
+export class StaticCodeGenerator implements CodeGenerator, SourceBuilder {
+  emit(code: CodeSegment[]): string {
     return code
       .map((segment) => {
         switch (segment.type) {
@@ -34,17 +41,21 @@ export const staticCodeGenerator: CodeGenerator & SourceBuilder = {
         }
       })
       .join("");
-  },
-  param: function (name: string): string {
+  }
+
+  param(name: string): string {
     return `__param_${name}`;
-  },
-  variable: function (name: string): string {
+  }
+
+  variable(name: string): string {
     return `__var_${name}`;
-  },
-  property: function (obj: string, propertyName: string): string {
+  }
+
+  property(obj: string, propertyName: string): string {
     return `__var_${obj}.${propertyName}`;
-  },
-  function: function (name: string, params: CodeSegment[][]): string {
+  }
+
+  function(name: string, params: CodeSegment[][]): string {
     const code = [name, "("];
 
     for (let i = 0; i < params.length; i++) {
@@ -55,8 +66,9 @@ export const staticCodeGenerator: CodeGenerator & SourceBuilder = {
     }
     code.push(")");
     return code.join("");
-  },
-  method: function (obj: string, methodName: string, params: CodeSegment[][]): string {
+  }
+
+  method(obj: string, methodName: string, params: CodeSegment[][]): string {
     const code = [`__var_${obj}.${methodName}`, "("];
 
     for (let i = 0; i < params.length; i++) {
@@ -67,12 +79,15 @@ export const staticCodeGenerator: CodeGenerator & SourceBuilder = {
     }
     code.push(")");
     return code.join("");
-  },
+  }
 
-  build(repo, _options) {
+  build(
+    repo: TemplateRepository<TemplatePass2>,
+    _options: SourceBuilderOptions
+  ): TemplateRepository<TemplateBuildResult> {
     return {
       basePath: repo.basePath,
       templates: new Map(),
     };
-  },
-};
+  }
+}

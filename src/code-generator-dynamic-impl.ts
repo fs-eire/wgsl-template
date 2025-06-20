@@ -1,5 +1,12 @@
-import type { CodeGenerator, CodeSegment } from "./types/code-generator.js";
-import type { SourceBuilder } from "./types/builder";
+import type {
+  CodeGenerator,
+  CodeSegment,
+  SourceBuilder,
+  SourceBuilderOptions,
+  TemplateRepository,
+  TemplatePass2,
+  TemplateBuildResult,
+} from "./types.js";
 
 const renderParam = (param: CodeSegment[]): string => {
   const render = (segment: CodeSegment): string => {
@@ -25,8 +32,8 @@ const renderParam = (param: CodeSegment[]): string => {
   }
 };
 
-export const dynamicCodeGenerator: CodeGenerator & SourceBuilder = {
-  emit: function (code: CodeSegment[]): string {
+export class DynamicCodeGenerator implements CodeGenerator, SourceBuilder {
+  emit(code: CodeSegment[]): string {
     return code
       .map((segment) => {
         switch (segment.type) {
@@ -53,17 +60,17 @@ export const dynamicCodeGenerator: CodeGenerator & SourceBuilder = {
         }
       })
       .join("");
-  },
-  param: function (name: string): string {
+  }
+  param(name: string): string {
     return `param[${JSON.stringify(name)}]`;
-  },
-  variable: function (_name: string): string {
+  }
+  variable(_name: string): string {
     return `variable[${JSON.stringify(_name)}]`;
-  },
-  property: function (obj: string, propertyName: string): string {
+  }
+  property(obj: string, propertyName: string): string {
     return `variable[${JSON.stringify(obj)}].${propertyName}`;
-  },
-  function: function (name: string, params: CodeSegment[][]): string {
+  }
+  function(name: string, params: CodeSegment[][]): string {
     const code = [name, "("];
 
     for (let i = 0; i < params.length; i++) {
@@ -74,8 +81,8 @@ export const dynamicCodeGenerator: CodeGenerator & SourceBuilder = {
     }
     code.push(")");
     return code.join("");
-  },
-  method: function (obj: string, methodName: string, params: CodeSegment[][]): string {
+  }
+  method(obj: string, methodName: string, params: CodeSegment[][]): string {
     const code = [`variable[${JSON.stringify(obj)}]`, ".", methodName, "("];
 
     for (let i = 0; i < params.length; i++) {
@@ -86,12 +93,15 @@ export const dynamicCodeGenerator: CodeGenerator & SourceBuilder = {
     }
     code.push(")");
     return code.join("");
-  },
+  }
 
-  build(repo, _options) {
+  build(
+    repo: TemplateRepository<TemplatePass2>,
+    _options: SourceBuilderOptions
+  ): TemplateRepository<TemplateBuildResult> {
     return {
       basePath: repo.basePath,
       templates: new Map(),
     };
-  },
-};
+  }
+}
