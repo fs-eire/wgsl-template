@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import * as fs from "fs/promises";
 import * as path from "path";
 import { resolveCodeGenerator } from "./code-generator-impl.js";
 import { generator } from "./generator-impl.js";
@@ -38,9 +38,9 @@ export const build = async (directory: string, options: TemplateLoadOptions): Pr
     const dirName = path.dirname(fullPath);
 
     // Create the directory if it doesn't exist
-    fs.mkdirSync(dirName, { recursive: true });
+    await fs.mkdir(dirName, { recursive: true });
 
     // Write the file
-    fs.writeFileSync(fullPath, result.fileContent);
+    await fs.writeFile(fullPath, result, "utf8");
   }
 };

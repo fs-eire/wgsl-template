@@ -34,15 +34,13 @@ export type TemplatePass2 = TemplateBase & {
   readonly generateResult: GenerateResult;
 };
 
-export type TemplateBuildResult = TemplateBase & {
-  /**
-   * The final content after all processing. The file content as a string.
-   * This is the content that will be written to the file.
-   */
-  readonly fileContent: string;
-};
+/**
+ * Represents the final content after all processing.
+ * The file content as a string.
+ */
+export type TemplateBuildResult = string;
 
-export interface TemplateRepository<T extends TemplateBase> {
+export interface TemplateRepository<T> {
   /**
    * The base path of the template files in the repository.
    */
@@ -154,6 +152,11 @@ export interface SourceBuilderOptions {
    * The namespaces to use for the source builder.
    */
   namespaces?: string[];
+
+  /**
+   * The prefix to use for include paths.
+   */
+  includePathPrefix?: string;
 }
 
 export interface SourceBuilder {

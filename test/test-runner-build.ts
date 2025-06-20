@@ -133,7 +133,7 @@ async function compareDirectories(genDir: string, expectedDir: string, testName:
 
     if (genContent !== expectedContent) {
       throw new Error(
-        `${testName}: File content mismatch: ${expectedFile}\nGenerated:\n${genContent}\nExpected:\n${expectedContent}`
+        `${testName}: File content mismatch: ${expectedFile}\n============== Generated: ==============\n${genContent}\n============== Expected: ==============\n${expectedContent}`
       );
     }
   }
