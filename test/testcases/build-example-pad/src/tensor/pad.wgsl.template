@@ -1,6 +1,6 @@
 #define PAD_MODE_CONSTANT 0
-#define PAD_MODE_EDGE 1
-#define PAD_MODE_REFLECT 2
+#define PAD_MODE_REFLECT 1
+#define PAD_MODE_EDGE 2
 #define PAD_MODE_WRAP 3
 
 #use guardAgainstOutOfBoundsWorkgroupSizes

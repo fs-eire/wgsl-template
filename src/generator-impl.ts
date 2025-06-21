@@ -1,4 +1,5 @@
 import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-pattern-impl.js";
+import { WgslTemplateGenerateError } from "./errors.js";
 
 import type {
   CodeGenerator,
@@ -27,6 +28,7 @@ interface GeneratorState {
   readonly pass1: readonly string[];
   readonly codeGenerator: CodeGenerator;
 
+  filePath: string;
   currentLine: number;
   currentColumn: number;
 
@@ -125,8 +127,10 @@ function generateImpl(generatorState: GeneratorState) {
     const segment: CodeSegment = { type, content };
     if (currentPreProcessorExpression !== null) {
       if (type === "raw") {
-        throw new Error(
-          `Raw content inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`
+        throw new WgslTemplateGenerateError(
+          `Raw content inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`,
+          "code-generation-failed",
+          { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
         );
       } else if (type === "code" && content === "\n") {
         // If we are inside a preprocessor expression, EOL means we are done with this expression
@@ -137,7 +141,11 @@ function generateImpl(generatorState: GeneratorState) {
     } else {
       if (currentFunctionCall.length > 0) {
         if (type === "raw") {
-          throw new Error(`Raw content inside function call at line ${currentLine + 1}, column ${currentColumn}`);
+          throw new WgslTemplateGenerateError(
+            `Raw content inside function call at line ${currentLine + 1}, column ${currentColumn}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         // If we are inside a function call, append to the current parameter
         currentFunctionCall[currentFunctionCall.length - 1].currentParam.push(segment);
@@ -183,7 +191,11 @@ function generateImpl(generatorState: GeneratorState) {
                 // End of current parameter, push it to params array
                 const call = currentFunctionCall[currentFunctionCall.length - 1];
                 if (call.currentParam.length === 0) {
-                  throw new Error(`Empty parameter at line ${currentLine + 1}, column ${currentColumn}`);
+                  throw new WgslTemplateGenerateError(
+                    `Empty parameter at line ${currentLine + 1}, column ${currentColumn}`,
+                    "parameter-missing",
+                    { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+                  );
                 }
                 call.params.push(call.currentParam);
                 call.currentParam = []; // Reset current parameter
@@ -194,7 +206,11 @@ function generateImpl(generatorState: GeneratorState) {
             } else if (matched === ")") {
               currentParenthesesState--;
               if (currentParenthesesState < 0) {
-                throw new Error(`Unmatched closing parenthesis at line ${currentLine + 1}, column ${currentColumn}`);
+                throw new WgslTemplateGenerateError(
+                  `Unmatched closing parenthesis at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+                );
               }
               if (
                 currentFunctionCall.length > 0 &&
@@ -246,7 +262,11 @@ function generateImpl(generatorState: GeneratorState) {
             } else if (matched === "}") {
               currentBracketState--;
               if (currentBracketState < 0) {
-                throw new Error(`Unmatched closing bracket at line ${currentLine + 1}, column ${currentColumn}`);
+                throw new WgslTemplateGenerateError(
+                  `Unmatched closing bracket at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+                );
               }
               if (currentBracketState === 0 && generatorState.mainFunction === "started") {
                 // End of main function context
@@ -258,26 +278,38 @@ function generateImpl(generatorState: GeneratorState) {
             } else if (matched.includes("$MAIN")) {
               // Special case for $MAIN, which indicates the main function context
               if (generatorState.mainFunction !== "not-started") {
-                throw new Error(
-                  `Multiple main function start ($MAIN) detected at line ${currentLine + 1}, column ${currentColumn}`
+                throw new WgslTemplateGenerateError(
+                  `Multiple main function start ($MAIN) detected at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
                 );
               }
               if (currentFunctionCall.length > 0) {
-                throw new Error(
-                  `$MAIN directive inside function call at line ${currentLine + 1}, column ${currentColumn}`
+                throw new WgslTemplateGenerateError(
+                  `$MAIN directive inside function call at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
                 );
               }
               if (currentParenthesesState !== 0) {
-                throw new Error(
-                  `$MAIN directive inside parentheses at line ${currentLine + 1}, column ${currentColumn}`
+                throw new WgslTemplateGenerateError(
+                  `$MAIN directive inside parentheses at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
                 );
               }
               if (currentBracketState !== 0) {
-                throw new Error(`$MAIN directive inside brackets at line ${currentLine + 1}, column ${currentColumn}`);
+                throw new WgslTemplateGenerateError(
+                  `$MAIN directive inside brackets at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+                );
               }
               if (currentPreProcessorExpression !== null) {
-                throw new Error(
-                  `$MAIN directive inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`
+                throw new WgslTemplateGenerateError(
+                  `$MAIN directive inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`,
+                  "code-generation-failed",
+                  { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
                 );
               }
 
@@ -360,7 +392,11 @@ function generateImpl(generatorState: GeneratorState) {
         for (const use of uses) {
           const pattern = lookupPattern(use);
           if (!pattern) {
-            throw new Error(`Unknown use: ${use} at line ${currentLine + 1}`);
+            throw new WgslTemplateGenerateError(
+              `Unknown use: ${use} at line ${currentLine + 1}`,
+              "code-pattern-not-found",
+              { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+            );
           }
           patterns.push(pattern);
         }
@@ -373,7 +409,11 @@ function generateImpl(generatorState: GeneratorState) {
 
         // Check if no parameters were provided
         if (params.length === 0) {
-          throw new Error(`No parameters specified in #param directive at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `No parameters specified in #param directive at line ${currentLine + 1}`,
+            "parameter-missing",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         for (const param of params) {
@@ -381,19 +421,31 @@ function generateImpl(generatorState: GeneratorState) {
           if (
             patterns.filter((p) => p.type === "param").some((p) => p.pattern.toString() === pattern.pattern.toString())
           ) {
-            throw new Error(`Duplicate param: ${param} at line ${currentLine + 1}`);
+            throw new WgslTemplateGenerateError(
+              `Duplicate param: ${param} at line ${currentLine + 1}`,
+              "parameter-type-mismatch",
+              { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+            );
           }
           patterns.push(pattern);
         }
       } else if (line.startsWith("#if ")) {
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Preprocessor directive inside function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         // Check if there's a condition after #if
         const condition = line.slice(4).trim();
         if (condition.length === 0) {
-          throw new Error(`Empty condition in #if directive at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Empty condition in #if directive at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         currentColumn = 4;
@@ -404,11 +456,19 @@ function generateImpl(generatorState: GeneratorState) {
         currentParenthesesState = 0; // Reset parentheses state for preprocessor expressions
         processCurrentLine();
         if (currentParenthesesState !== 0) {
-          throw new Error(`Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         currentParenthesesState = cachedParenthesesState; // Restore parentheses state
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Incomplete function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Incomplete function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         generatorState.result.push(...currentPreProcessorExpression);
         currentPreProcessorExpression = null;
@@ -419,23 +479,33 @@ function generateImpl(generatorState: GeneratorState) {
           (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
             preprocessIfStack[preprocessIfStack.length - 1][0] !== "elif")
         ) {
-          throw new Error(`#elif mismatch at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(`#elif mismatch at line ${currentLine + 1}`, "code-generation-failed", {
+            lineNumber: currentLine + 1,
+          });
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Preprocessor directive inside function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         // check parentheses and brackets state
         const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
         if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
-          throw new Error(
-            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          throw new WgslTemplateGenerateError(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
         const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
         if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
-          throw new Error(
-            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          throw new WgslTemplateGenerateError(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
         preprocessIfStack[preprocessIfStack.length - 1][3] = currentParenthesesState; // Update the parentheses state for the current block
@@ -446,7 +516,11 @@ function generateImpl(generatorState: GeneratorState) {
         // Check if there's a condition after #elif
         const condition = line.slice(6).trim();
         if (condition.length === 0) {
-          throw new Error(`Empty condition in #elif directive at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Empty condition in #elif directive at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         currentColumn = 6;
@@ -457,11 +531,19 @@ function generateImpl(generatorState: GeneratorState) {
         currentParenthesesState = 0; // Reset parentheses state for preprocessor expressions
         processCurrentLine();
         if (currentParenthesesState !== 0) {
-          throw new Error(`Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Unmatched parentheses in preprocessor expression at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         currentParenthesesState = cachedParenthesesState; // Restore parentheses state
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Incomplete function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Incomplete function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         generatorState.result.push(...currentPreProcessorExpression);
         currentPreProcessorExpression = null;
@@ -472,23 +554,33 @@ function generateImpl(generatorState: GeneratorState) {
           (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
             preprocessIfStack[preprocessIfStack.length - 1][0] !== "elif")
         ) {
-          throw new Error(`#else mismatch at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(`#else mismatch at line ${currentLine + 1}`, "code-generation-failed", {
+            lineNumber: currentLine + 1,
+          });
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Preprocessor directive inside function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         // check parentheses and brackets state
         const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
         if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
-          throw new Error(
-            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          throw new WgslTemplateGenerateError(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
         const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
         if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
-          throw new Error(
-            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          throw new WgslTemplateGenerateError(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
         preprocessIfStack[preprocessIfStack.length - 1][3] = currentParenthesesState; // Update the parentheses state for the current block
@@ -497,43 +589,69 @@ function generateImpl(generatorState: GeneratorState) {
         currentBracketState = preprocessIfStack[preprocessIfStack.length - 1][2]; // Reset bracket state to the initial state of the current block
 
         if (line.substring(5).trim() !== "") {
-          throw new Error(`Unexpected content after #else at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Unexpected content after #else at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         preprocessIfStack[preprocessIfStack.length - 1][0] = "else";
         output("raw", "} else {\n");
       } else if (line.startsWith("#endif")) {
         if (preprocessIfStack.length === 0) {
-          throw new Error(`#endif mismatch at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(`#endif mismatch at line ${currentLine + 1}`, "code-generation-failed", {
+            lineNumber: currentLine + 1,
+          });
         }
         if (currentFunctionCall.length > 0) {
-          throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Preprocessor directive inside function call at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
 
         // check parentheses and brackets state
         const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
         if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
-          throw new Error(
-            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          throw new WgslTemplateGenerateError(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
         const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
         if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
-          throw new Error(
-            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          throw new WgslTemplateGenerateError(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );
         }
 
         if (line.substring(6).trim() !== "") {
-          throw new Error(`Unexpected content after #endif at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Unexpected content after #endif at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
         output("raw", "}\n");
         preprocessIfStack.pop();
       } else {
         if (["#use", "#param", "#if", "#elif"].includes(line)) {
-          throw new Error(`Missing content after preprocessor directive at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Missing content after preprocessor directive at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         } else {
           // Handle unknown preprocessor directive
-          throw new Error(`Unknown preprocessor directive: ${line} at line ${currentLine + 1}`);
+          throw new WgslTemplateGenerateError(
+            `Unknown preprocessor directive: ${line} at line ${currentLine + 1}`,
+            "code-generation-failed",
+            { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+          );
         }
       }
     } else {
@@ -549,12 +667,15 @@ const generate = (
 ): GenerateResult => {
   const pass1 = repo.templates.get(filePath)?.pass1;
   if (!pass1) {
-    throw new Error(`Template not found for file: ${filePath}`);
+    throw new WgslTemplateGenerateError(`Template not found for file: ${filePath}`, "generator-not-found", {
+      filePath,
+    });
   }
 
   const generatorState: GeneratorState = {
     pass1,
     codeGenerator,
+    filePath,
     currentLine: 0,
     currentColumn: 0,
     preprocessIfStack: [],
@@ -571,21 +692,28 @@ const generate = (
   generateImpl(generatorState);
 
   if (generatorState.preprocessIfStack.length > 0) {
-    throw new Error(`Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(", ")}`);
+    throw new WgslTemplateGenerateError(
+      `Unclosed preprocessor directive: ${generatorState.preprocessIfStack.join(", ")}`,
+      "code-generation-failed"
+    );
   }
   if (generatorState.currentFunctionCall.length > 0) {
-    throw new Error(
-      `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
+    throw new WgslTemplateGenerateError(
+      `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`,
+      "code-generation-failed"
     );
   }
   if (generatorState.currentParenthesesState !== 0) {
-    throw new Error(`Unmatched parentheses at the end of processing`);
+    throw new WgslTemplateGenerateError(`Unmatched parentheses at the end of processing`, "code-generation-failed");
   }
   if (generatorState.currentBracketState !== 0) {
-    throw new Error(`Unmatched brackets at the end of processing`);
+    throw new WgslTemplateGenerateError(`Unmatched brackets at the end of processing`, "code-generation-failed");
   }
   if (generatorState.mainFunction === "started") {
-    throw new Error(`Main function context started but not ended at the end of processing`);
+    throw new WgslTemplateGenerateError(
+      `Main function context started but not ended at the end of processing`,
+      "code-generation-failed"
+    );
   }
 
   // merge results

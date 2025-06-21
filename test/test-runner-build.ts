@@ -66,14 +66,13 @@ export async function runBuildTest(testCase: TestCase, debug?: boolean): Promise
       // Show debug information if debug mode is enabled
       if (debug) {
         console.log(`  Build status: ${buildResult.status}`);
-        if (buildResult.files) {
-          console.log(`  Generated ${buildResult.files.size} file(s):`);
-          for (const [filePath, fileInfo] of buildResult.files) {
-            if (fileInfo.error) {
-              console.log(`    ❌ ${filePath}: ${fileInfo.error}`);
-            } else {
-              console.log(`    ✅ ${filePath} (${fileInfo.size} bytes)`);
-            }
+        if (buildResult.result?.files) {
+          const templatesMap = buildResult.result.files.templates;
+          console.log(`  Generated ${templatesMap.size} file(s):`);
+          for (const [filePath, fileContent] of templatesMap) {
+            // Calculate file size from content length
+            const size = new TextEncoder().encode(fileContent).length;
+            console.log(`    ✅ ${filePath} (${size} bytes)`);
           }
         }
         if (buildResult.error) {

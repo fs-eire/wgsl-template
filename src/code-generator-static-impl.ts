@@ -1,3 +1,4 @@
+import { WgslTemplateBuildError } from "./errors.js";
 import type {
   SourceBuilder,
   CodeGenerator,
@@ -161,7 +162,7 @@ export class StaticCodeGenerator implements CodeGenerator, SourceBuilder {
 
   #buildGenerateStringTable(): string {
     if (!this.#stringTable) {
-      throw new Error("String table is not enabled");
+      throw new WgslTemplateBuildError("String table is not enabled", "output-validation-failed");
     }
 
     const stringTableContent = [];

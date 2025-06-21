@@ -4,6 +4,11 @@ import { resolveCodeGenerator } from "./code-generator-impl.js";
 import { generator } from "./generator-impl.js";
 import { loader } from "./loader-impl.js";
 import { parser } from "./parser-impl.js";
+import { WgslTemplateBuildError } from "./errors.js";
+import type { TemplateRepository, TemplatePass0, TemplatePass1, TemplatePass2 } from "./types.js";
+
+// Export error types
+export * from "./errors.js";
 
 /**
  * Options for the build process.
@@ -52,54 +57,50 @@ export interface BuildResult {
   status: "success" | "build-error" | "file-write-error";
 
   /**
-   * The error message if the build failed.
+   * The error object if the build failed.
    */
-  error?: string;
+  error?: Error;
 
-  /**
-   * A map of files that were processed during the build.
-   *
-   * Only available if the build was successful.
-   */
-  files?: Map<
-    string,
-    {
-      /**
-       * Error message if any error occurred while writting the file.
-       */
-      error?: string;
-      /**
-       * File size in bytes.
-       */
-      size: number;
-    }
-  >;
+  result: {
+    pass0?: TemplateRepository<TemplatePass0>;
+    pass1?: TemplateRepository<TemplatePass1>;
+    pass2?: TemplateRepository<TemplatePass2>;
+    files?: TemplateRepository<string>;
+  };
 }
 
 export const build = async (options: BuildOptions): Promise<BuildResult> => {
+  let pass0: TemplateRepository<TemplatePass0> | undefined;
+  let pass1: TemplateRepository<TemplatePass1> | undefined;
+  let pass2: TemplateRepository<TemplatePass2> | undefined;
+  let files: TemplateRepository<string> | undefined;
+
   try {
-    const pass0 = await loader.loadFromDirectory(options.sourceDir, { ext: options.templateExt });
-    const pass1 = parser.parse(pass0);
+    pass0 = await loader.loadFromDirectory(options.sourceDir, { ext: options.templateExt });
+    pass1 = parser.parse(pass0);
 
     const codeGenerator = resolveCodeGenerator(options.generator);
-    const generated = generator.generateDirectory(pass1, codeGenerator);
+    pass2 = generator.generateDirectory(pass1, codeGenerator);
 
-    const finalResult = codeGenerator.build(generated, {
+    const files = codeGenerator.build(pass2, {
       templateExt: options.templateExt,
       includePathPrefix: options.includePathPrefix,
     });
 
     // Write files to the output directory
     const basePath = path.resolve(options.outDir);
-    const files = new Map<string, { error?: string; size: number }>();
 
-    for (const [filePath, result] of finalResult.templates) {
+    for (const [filePath, result] of files.templates) {
       try {
         const fullPath = path.resolve(basePath, filePath);
 
         // Security check: ensure the resolved path is within the output directory
         if (!fullPath.startsWith(basePath + path.sep) && fullPath !== basePath) {
-          throw new Error(`Security violation: attempted to write file outside output directory: ${filePath}`);
+          throw new WgslTemplateBuildError(
+            `Security violation: attempted to write file outside output directory: ${filePath}`,
+            "path-security-violation",
+            { filePath }
+          );
         }
 
         const dirName = path.dirname(fullPath);
@@ -111,28 +112,36 @@ export const build = async (options: BuildOptions): Promise<BuildResult> => {
         await fs.writeFile(fullPath, result, "utf8");
 
         // Record successful file write
-        const stats = await fs.stat(fullPath);
-        files.set(filePath, { size: stats.size });
+        await fs.stat(fullPath);
       } catch (error) {
-        // Record file write error
-        files.set(filePath, {
-          error: error instanceof Error ? error.message : String(error),
-          size: 0,
-        });
+        return {
+          status: "file-write-error",
+          error: error instanceof Error ? error : new Error(String(error)),
+          result: {
+            pass0,
+            pass1,
+            pass2,
+            files,
+          },
+        };
       }
     }
 
-    // Check if any files had errors
-    const hasErrors = Array.from(files.values()).some((file) => file.error);
-
     return {
-      status: hasErrors ? "file-write-error" : "success",
-      files,
+      status: "success",
+      result: { pass0, pass1, pass2, files },
     };
   } catch (error) {
+    const errorObj = error instanceof Error ? error : new Error(String(error));
     return {
       status: "build-error",
-      error: error instanceof Error ? error.message : String(error),
+      error: errorObj,
+      result: {
+        pass0,
+        pass1,
+        pass2,
+        files,
+      },
     };
   }
 };

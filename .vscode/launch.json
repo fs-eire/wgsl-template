@@ -15,6 +15,18 @@
       "cwd": "${workspaceFolder}",
       "args": ["-c", "build-example-pad", "-d"],
       "preLaunchTask": "npm: build"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch CLI",
+      "program": "${workspaceFolder}/bin/cli.ts",
+      "runtimeArgs": ["-r", "ts-node/register"],
+      "console": "integratedTerminal",
+      "sourceMaps": true,
+      "cwd": "${workspaceFolder}",
+      "args": ["-i", ".\\test\\testcases\\build-example-pad\\src", "-o", ".\\gen\\wgsl_gen"],
+      "preLaunchTask": "npm: build"
     }
   ]
 }

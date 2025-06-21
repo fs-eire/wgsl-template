@@ -44,9 +44,9 @@ if (__param_dim_value_zero) {
 (*ss_ptr) << ");\n";
 if (__param_pad_mode == 0) {
 (*ss_ptr) << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n        use_pad_value = true;\n";
-} else if (__param_pad_mode == 1) {
-(*ss_ptr) << "    if (output_index < lower_pads) {\n      in_coord = 0;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = data_shape - 1;\n";
 } else if (__param_pad_mode == 2) {
+(*ss_ptr) << "    if (output_index < lower_pads) {\n      in_coord = 0;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = data_shape - 1;\n";
+} else if (__param_pad_mode == 1) {
 (*ss_ptr) << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n      in_coord = output_index - lower_pads;\n      if (in_coord < 0) {\n        in_coord = -in_coord;\n      }\n      let _2n_1 = 2 * (data_shape - 1);\n      in_coord = in_coord % _2n_1;\n      if (in_coord >= data_shape) {\n        in_coord = _2n_1 - in_coord;\n      }\n";
 } else {
 (*ss_ptr) << "    if (output_index < lower_pads) {\n      in_coord = data_shape + output_index - lower_pads;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = output_index - data_shape - lower_pads;\n";

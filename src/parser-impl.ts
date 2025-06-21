@@ -1,4 +1,5 @@
 import type { Parser, TemplateRepository, TemplatePass1, TemplatePass0 } from "./types.js";
+import { WgslTemplateParseError } from "./errors.js";
 
 /**
  * Parses raw content of a template file and remove comments.
@@ -71,7 +72,9 @@ function parsePreprocessorIncludeDirectives(
   const currentState = parseState.get(currentFile);
 
   if (!currentState) {
-    throw new Error(`File "${currentFile}" not found in parse state`);
+    throw new WgslTemplateParseError(`File "${currentFile}" not found in parse state`, "include-resolution", {
+      filePath: currentFile,
+    });
   }
 
   if (currentState.includeProcessed) {
@@ -86,25 +89,31 @@ function parsePreprocessorIncludeDirectives(
     if (includeMatch) {
       const includeParam = includeMatch[1].trim();
       if (!(includeParam.startsWith('"') && includeParam.endsWith('"'))) {
-        throw new Error(
+        throw new WgslTemplateParseError(
           `Invalid #include directive in file ${currentFile} at line ${
             lineNumber + 1
-          }: file path must be enclosed in double quotes`
+          }: file path must be enclosed in double quotes`,
+          "syntax-error",
+          { filePath: currentFile, lineNumber: lineNumber + 1 }
         );
       }
       const includePath = includeParam.slice(1, -1); // Remove quotes
       if (includeStack.includes(includePath)) {
-        throw new Error(
+        throw new WgslTemplateParseError(
           `Circular #include detected in file ${currentFile} at line ${
             lineNumber + 1
-          }: ${includePath} is already included`
+          }: ${includePath} is already included`,
+          "include-circular",
+          { filePath: currentFile, lineNumber: lineNumber + 1 }
         );
       }
       if (!parseState.has(includePath)) {
-        throw new Error(
+        throw new WgslTemplateParseError(
           `File "${includePath}" not found in parse state for #include directive in file "${currentFile}" at line ${
             lineNumber + 1
-          }`
+          }`,
+          "include-not-found",
+          { filePath: currentFile, lineNumber: lineNumber + 1 }
         );
       }
       includeStack.push(includePath);
@@ -142,24 +151,30 @@ function parseMacroDirectives(lines: string[], fileName: string): string[] {
         // Check specific error cases
         const emptyValueMatch = line.match(/^#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
         if (emptyValueMatch) {
-          throw new Error(
+          throw new WgslTemplateParseError(
             `Invalid macro definition in file ${fileName} at line ${
               lineNumber + 1
-            }: macro "${emptyValueMatch[1]}" has no value`
+            }: macro "${emptyValueMatch[1]}" has no value`,
+            "syntax-error",
+            { filePath: fileName, lineNumber: lineNumber + 1 }
           );
         }
 
         const invalidNameMatch = line.match(/^#define\s+(\S+)(?:\s+(.+))?$/);
         if (invalidNameMatch) {
-          throw new Error(
+          throw new WgslTemplateParseError(
             `Invalid macro definition in file ${fileName} at line ${
               lineNumber + 1
-            }: invalid macro name "${invalidNameMatch[1]}" (must start with letter or underscore, contain only letters, numbers, and underscores)`
+            }: invalid macro name "${invalidNameMatch[1]}" (must start with letter or underscore, contain only letters, numbers, and underscores)`,
+            "syntax-error",
+            { filePath: fileName, lineNumber: lineNumber + 1 }
           );
         }
 
-        throw new Error(
-          `Invalid macro definition in file ${fileName} at line ${lineNumber + 1}: malformed #define directive`
+        throw new WgslTemplateParseError(
+          `Invalid macro definition in file ${fileName} at line ${lineNumber + 1}: malformed #define directive`,
+          "syntax-error",
+          { filePath: fileName, lineNumber: lineNumber + 1 }
         );
       }
 
@@ -169,27 +184,33 @@ function parseMacroDirectives(lines: string[], fileName: string): string[] {
 
       // Check for whitespace-only value
       if (macroValue === "") {
-        throw new Error(
+        throw new WgslTemplateParseError(
           `Invalid macro definition in file ${fileName} at line ${
             lineNumber + 1
-          }: macro "${macroName}" has empty value (whitespace only)`
+          }: macro "${macroName}" has empty value (whitespace only)`,
+          "syntax-error",
+          { filePath: fileName, lineNumber: lineNumber + 1 }
         );
       }
 
       // Check for duplicate macro definition
       if (macros.has(macroName)) {
-        throw new Error(
-          `Duplicate macro definition in file ${fileName} at line ${lineNumber + 1}: "${macroName}" is already defined`
+        throw new WgslTemplateParseError(
+          `Duplicate macro definition in file ${fileName} at line ${lineNumber + 1}: "${macroName}" is already defined`,
+          "define-expansion",
+          { filePath: fileName, lineNumber: lineNumber + 1 }
         );
       }
 
       // Check for direct circular reference (macro referencing itself)
       const directCircularRegex = new RegExp(`\\b${macroName}\\b`);
       if (directCircularRegex.test(macroValue)) {
-        throw new Error(
+        throw new WgslTemplateParseError(
           `Circular macro reference in file ${fileName} at line ${
             lineNumber + 1
-          }: macro "${macroName}" references itself`
+          }: macro "${macroName}" references itself`,
+          "define-expansion",
+          { filePath: fileName, lineNumber: lineNumber + 1 }
         );
       }
 
@@ -202,10 +223,12 @@ function parseMacroDirectives(lines: string[], fileName: string): string[] {
           // Check if the existing macro value contains the current macro name (circular reference)
           const circularRegex = new RegExp(`\\b${macroName}\\b`);
           if (circularRegex.test(existingMacroValue)) {
-            throw new Error(
+            throw new WgslTemplateParseError(
               `Circular macro reference in file ${fileName} at line ${
                 lineNumber + 1
-              }: macro "${macroName}" creates circular dependency with "${existingMacroName}"`
+              }: macro "${macroName}" creates circular dependency with "${existingMacroName}"`,
+              "define-expansion",
+              { filePath: fileName, lineNumber: lineNumber + 1 }
             );
           }
           expandedValue = expandedValue.replace(regex, existingMacroValue);

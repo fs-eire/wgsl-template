@@ -1,5 +1,6 @@
 import { DynamicCodeGenerator } from "./code-generator-dynamic-impl.js";
 import { StaticCodeGenerator } from "./code-generator-static-impl.js";
+import { WgslTemplateGenerateError } from "./errors.js";
 import type { SourceBuilder, CodeGenerator } from "./types.js";
 
 export function resolveCodeGenerator(generator: string): CodeGenerator & SourceBuilder {
@@ -11,6 +12,6 @@ export function resolveCodeGenerator(generator: string): CodeGenerator & SourceB
     case "dynamic":
       return new DynamicCodeGenerator();
     default:
-      throw new Error(`Unknown code generator: ${generator}`);
+      throw new WgslTemplateGenerateError(`Unknown code generator: ${generator}`, "generator-not-found");
   }
 }

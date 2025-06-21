@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import * as path from "node:path";
 
 import type { Loader, LoadFromDirectoryOptions, TemplatePass0, TemplateRepository } from "./types.js";
+import { WgslTemplateLoadError } from "./errors.js";
 
 /**
  * Recursively scans a directory and its subdirectories for template files.
@@ -43,7 +44,11 @@ async function loadTemplatesRecursively(
       // Skip symbolic links and other special file types for security
     }
   } catch (error) {
-    throw new Error(`Error scanning directory ${directory}: ${(error as Error).message}`);
+    throw new WgslTemplateLoadError(
+      `Error scanning directory ${directory}: ${(error as Error).message}`,
+      "scan-directory",
+      { cause: error as Error }
+    );
   }
 }
 /**
@@ -64,7 +69,11 @@ async function loadTemplateFile(
 
     // Security check: ensure the file is within the base directory
     if (!resolvedFilePath.startsWith(resolvedBasePath + path.sep) && resolvedFilePath !== resolvedBasePath) {
-      throw new Error(`Security violation: attempted to read file outside base directory: ${filePath}`);
+      throw new WgslTemplateLoadError(
+        `Security violation: attempted to read file outside base directory: ${filePath}`,
+        "read-file",
+        { filePath }
+      );
     }
 
     const content = await readFile(filePath, "utf8");
@@ -81,7 +90,11 @@ async function loadTemplateFile(
 
     templates.set(templateName, template);
   } catch (error) {
-    throw new Error(`Error loading template file ${filePath}: ${(error as Error).message}`);
+    throw new WgslTemplateLoadError(
+      `Error loading template file ${filePath}: ${(error as Error).message}`,
+      "read-file",
+      { filePath, cause: error as Error }
+    );
   }
 }
 
@@ -109,10 +122,14 @@ export const loader: Loader = {
     try {
       const dirStat = await stat(directory);
       if (!dirStat.isDirectory()) {
-        throw new Error(`Path ${directory} is not a directory`);
+        throw new WgslTemplateLoadError(`Path ${directory} is not a directory`, "scan-directory");
       }
     } catch (error) {
-      throw new Error(`Cannot access directory ${directory}: ${(error as Error).message}`);
+      throw new WgslTemplateLoadError(
+        `Cannot access directory ${directory}: ${(error as Error).message}`,
+        "scan-directory",
+        { cause: error as Error }
+      );
     } // Recursively load template files
     await loadTemplatesRecursively(directory, directory, ext, templates);
 
