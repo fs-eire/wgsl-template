@@ -1,0 +1,86 @@
+# Source files (only publish compiled JavaScript)
+/src/
+/bin/
+
+# Test files
+test/
+
+# Development and build files
+tsconfig.json
+eslint.config.js
+.eslintrc.json
+.prettierrc.json
+.prettierignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+debug.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Git files
+.git/
+.gitignore
+
+# GitHub files
+.github/
+
+# Temporary folders
+tmp/
+temp/
+
+# Build artifacts that shouldn't be published
+*.tsbuildinfo
+
+# Local environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Package manager files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Documentation source (keep README.md but exclude docs source)
+docs/
+
+# Examples and demos that are for development only
+examples/
+demo/

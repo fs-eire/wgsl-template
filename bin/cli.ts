@@ -303,7 +303,7 @@ Options:
 Examples:
   npx wgsl-gen --input ./templates --output ./generated
   npx wgsl-gen --input ./shaders --output ./cpp --generator static-cpp
-  npx wgsl-gen -i ./src -o ./build --include-prefix "myproject"
+  npx wgsl-gen -i ./src -o ./build --include-prefix "myproject/"
   npx wgsl-gen -i ./templates -o ./generated --clean --debug
 `);
 }
