@@ -31,7 +31,9 @@ jobs:
       run: npm run build
 
     - name: Run linter
-      run: npm run lint    - name: Check code formatting
+      run: npm run lint
+
+    - name: Check code formatting
       id: format-check
       run: |
         # Run format and capture if any files were changed
