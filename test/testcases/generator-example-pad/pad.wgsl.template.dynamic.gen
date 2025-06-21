@@ -1,7 +1,7 @@
 emit("\n");
 emit("\n");
-emit(variable["MAIN"]);
-emit(" {\n");
+MainFunctionStart();
+emit("\n");
 emit("  ");
 emit(shader.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size"));
 emit(";\n");
@@ -79,4 +79,5 @@ emit("  ");
 emit(variable["output"].SetByOffset("global_idx", "select(data[input_index], constant_value, use_pad_value)"));
 emit(";\n");
 }
-emit("}\n");
+MainFunctionEnd();
+emit("\n");

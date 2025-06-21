@@ -1,6 +1,6 @@
 ss << "\n\n";
-ss << __var_MAIN;
-ss << " {\n  ";
+MainFunctionStart();
+ss << "\n  ";
 ss << shader.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size");
 ss << ";\n\n  let constant_value =\n";
 if (__param_is_float16) {
@@ -35,7 +35,7 @@ ss << "    if (output_index < lower_pads) {\n      in_coord = data_shape + outpu
 ss << "    } else {\n        in_coord = output_index - lower_pads;\n    }\n\n    input_index += select(u32(in_coord)\n";
 if (__var_output.Rank() > 1) {
 ss << "        * ";
-ss << GetElementAt("uniforms.data_stride", "dim", absl::StrCat(__var_output.Rank(), " - 1"));     
+ss << GetElementAt("uniforms.data_stride", "dim", absl::StrCat(__var_output.Rank(), " - 1"));
 ss << "\n";
 }
 ss << "        , u32(in_coord), dim == ";
@@ -44,4 +44,5 @@ ss << " - 1);\n  }\n\n  ";
 ss << __var_output.SetByOffset("global_idx", "select(data[input_index], constant_value, use_pad_value)");
 ss << ";\n";
 }
-ss << "}\n";
+MainFunctionEnd();
+ss << "\n";

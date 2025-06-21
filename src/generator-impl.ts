@@ -27,15 +27,23 @@ interface GeneratorState {
   currentLine: number;
   currentColumn: number;
 
-  preprocessIfStack: ("if" | "elif" | "else" | "endif")[];
+  preprocessIfStack: [
+    type: "if" | "elif" | "else" | "endif",
+    initialParenthesesState: number,
+    initialBracketState: number,
+    previousBlockParenthesesState: number | null,
+    previousBlockBracketState: number | null,
+  ][];
   patterns: CodePattern[];
 
   currentFunctionCall: FunctionCallState[];
   currentParenthesesState: number; // 0: no parentheses, >0: nested parentheses count
+  mainFunction: "not-started" | "started" | "ended"; // tracks the main function context
+  currentBracketState: number; // 0: no brackets, >0: nested brackets count
 
   result: CodeSegment[];
-  usedParams: Set<string>;
-  usedVariables: Set<string>;
+  usedParams: Map<string, Required<CodePattern["paramType"]>>; // name -> type
+  usedVariables: Map<string, Required<CodePattern["variableType"]>>; // name -> type
 }
 
 /**
@@ -106,6 +114,7 @@ function generateImpl(generatorState: GeneratorState) {
   let currentLine = generatorState.currentLine;
   let currentColumn = generatorState.currentColumn;
   let currentParenthesesState = generatorState.currentParenthesesState;
+  let currentBracketState = generatorState.currentBracketState;
 
   let currentPreProcessorExpression: CodeSegment[] | null = null;
 
@@ -219,10 +228,54 @@ function generateImpl(generatorState: GeneratorState) {
               } else {
                 output("code", ")");
               }
+            } else if (matched === "{") {
+              currentBracketState++;
+              output("code", "{");
+            } else if (matched === "}") {
+              currentBracketState--;
+              if (currentBracketState < 0) {
+                throw new Error(`Unmatched closing bracket at line ${currentLine + 1}, column ${currentColumn}`);
+              }
+              if (currentBracketState === 0 && generatorState.mainFunction === "started") {
+                // End of main function context
+                output("raw", "MainFunctionEnd();\n");
+                generatorState.mainFunction = "ended";
+              } else {
+                output("code", "}");
+              }
+            } else if (matched.includes("$MAIN")) {
+              // Special case for $MAIN, which indicates the main function context
+              if (generatorState.mainFunction !== "not-started") {
+                throw new Error(
+                  `Multiple main function start ($MAIN) detected at line ${currentLine + 1}, column ${currentColumn}`
+                );
+              }
+              if (currentFunctionCall.length > 0) {
+                throw new Error(
+                  `$MAIN directive inside function call at line ${currentLine + 1}, column ${currentColumn}`
+                );
+              }
+              if (currentParenthesesState !== 0) {
+                throw new Error(
+                  `$MAIN directive inside parentheses at line ${currentLine + 1}, column ${currentColumn}`
+                );
+              }
+              if (currentBracketState !== 0) {
+                throw new Error(`$MAIN directive inside brackets at line ${currentLine + 1}, column ${currentColumn}`);
+              }
+              if (currentPreProcessorExpression !== null) {
+                throw new Error(
+                  `$MAIN directive inside preprocessor expression at line ${currentLine + 1}, column ${currentColumn}`
+                );
+              }
+
+              generatorState.mainFunction = "started";
+              output("raw", "MainFunctionStart();\n");
+              currentBracketState = 1; // Start a new bracket context for the main function
             }
             break;
           case "param":
-            generatorState.usedParams.add(matched);
+            generatorState.usedParams.set(matched, next.pattern.paramType || "int");
             output("expression", codeGenerator.param(matched));
             break;
           case "variable":
@@ -230,7 +283,7 @@ function generateImpl(generatorState: GeneratorState) {
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[0]) {
               variableName = next.pattern.replace[0];
             }
-            generatorState.usedVariables.add(variableName);
+            generatorState.usedVariables.set(variableName, next.pattern.variableType || "shader-variable");
             output("expression", codeGenerator.variable(variableName));
             break;
           case "method":
@@ -240,7 +293,7 @@ function generateImpl(generatorState: GeneratorState) {
               caller = restLine.slice(indices![1][0], indices![1][1]);
             }
             // Track the object variable for method calls
-            generatorState.usedVariables.add(caller);
+            generatorState.usedVariables.set(caller, next.pattern.variableType || "shader-variable");
           case "function":
             // Handle function/method patterns
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[caller ? 1 : 0]) {
@@ -266,7 +319,7 @@ function generateImpl(generatorState: GeneratorState) {
               caller = restLine.slice(indices![1][0], indices![1][1]);
             }
             // Track the object variable for property access
-            generatorState.usedVariables.add(caller);
+            generatorState.usedVariables.set(caller, next.pattern.variableType || "shader-variable");
             if (next.pattern.replace && Array.isArray(next.pattern.replace) && next.pattern.replace[1]) {
               name = next.pattern.replace[1]!;
             } else {
@@ -331,7 +384,7 @@ function generateImpl(generatorState: GeneratorState) {
         }
 
         currentColumn = 4;
-        preprocessIfStack.push("if");
+        preprocessIfStack.push(["if", currentParenthesesState, currentBracketState, null, null]);
         output("raw", "if (");
         currentPreProcessorExpression = [];
         const cachedParenthesesState = currentParenthesesState;
@@ -350,14 +403,32 @@ function generateImpl(generatorState: GeneratorState) {
       } else if (line.startsWith("#elif ")) {
         if (
           preprocessIfStack.length === 0 ||
-          (preprocessIfStack[preprocessIfStack.length - 1] !== "if" &&
-            preprocessIfStack[preprocessIfStack.length - 1] !== "elif")
+          (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
+            preprocessIfStack[preprocessIfStack.length - 1][0] !== "elif")
         ) {
           throw new Error(`#elif mismatch at line ${currentLine + 1}`);
         }
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+
+        // check parentheses and brackets state
+        const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
+        if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
+          throw new Error(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          );
+        }
+        const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
+        if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
+          throw new Error(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          );
+        }
+        preprocessIfStack[preprocessIfStack.length - 1][3] = currentParenthesesState; // Update the parentheses state for the current block
+        preprocessIfStack[preprocessIfStack.length - 1][4] = currentBracketState; // Update the bracket state for the current block
+        currentParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][1]; // Reset parentheses state to the initial state of the current block
+        currentBracketState = preprocessIfStack[preprocessIfStack.length - 1][2]; // Reset bracket state to the initial state of the current block
 
         // Check if there's a condition after #elif
         const condition = line.slice(6).trim();
@@ -366,7 +437,7 @@ function generateImpl(generatorState: GeneratorState) {
         }
 
         currentColumn = 6;
-        preprocessIfStack[preprocessIfStack.length - 1] = "elif";
+        preprocessIfStack[preprocessIfStack.length - 1][0] = "elif";
         output("raw", "} else if (");
         currentPreProcessorExpression = [];
         const cachedParenthesesState = currentParenthesesState;
@@ -385,18 +456,37 @@ function generateImpl(generatorState: GeneratorState) {
       } else if (line.startsWith("#else")) {
         if (
           preprocessIfStack.length === 0 ||
-          (preprocessIfStack[preprocessIfStack.length - 1] !== "if" &&
-            preprocessIfStack[preprocessIfStack.length - 1] !== "elif")
+          (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
+            preprocessIfStack[preprocessIfStack.length - 1][0] !== "elif")
         ) {
           throw new Error(`#else mismatch at line ${currentLine + 1}`);
         }
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+
+        // check parentheses and brackets state
+        const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
+        if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
+          throw new Error(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          );
+        }
+        const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
+        if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
+          throw new Error(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          );
+        }
+        preprocessIfStack[preprocessIfStack.length - 1][3] = currentParenthesesState; // Update the parentheses state for the current block
+        preprocessIfStack[preprocessIfStack.length - 1][4] = currentBracketState; // Update the bracket state for the current block
+        currentParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][1]; // Reset parentheses state to the initial state of the current block
+        currentBracketState = preprocessIfStack[preprocessIfStack.length - 1][2]; // Reset bracket state to the initial state of the current block
+
         if (line.substring(5).trim() !== "") {
           throw new Error(`Unexpected content after #else at line ${currentLine + 1}`);
         }
-        preprocessIfStack[preprocessIfStack.length - 1] = "else";
+        preprocessIfStack[preprocessIfStack.length - 1][0] = "else";
         output("raw", "} else {\n");
       } else if (line.startsWith("#endif")) {
         if (preprocessIfStack.length === 0) {
@@ -405,6 +495,21 @@ function generateImpl(generatorState: GeneratorState) {
         if (currentFunctionCall.length > 0) {
           throw new Error(`Preprocessor directive inside function call at line ${currentLine + 1}`);
         }
+
+        // check parentheses and brackets state
+        const previousBlockParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][3];
+        if (previousBlockParenthesesState !== null && currentParenthesesState !== previousBlockParenthesesState) {
+          throw new Error(
+            `Parentheses state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockParenthesesState}, got ${currentParenthesesState}`
+          );
+        }
+        const previousBlockBracketState = preprocessIfStack[preprocessIfStack.length - 1][4];
+        if (previousBlockBracketState !== null && currentBracketState !== previousBlockBracketState) {
+          throw new Error(
+            `Bracket state mismatch in #elif directive at line ${currentLine + 1}, expected ${previousBlockBracketState}, got ${currentBracketState}`
+          );
+        }
+
         if (line.substring(6).trim() !== "") {
           throw new Error(`Unexpected content after #endif at line ${currentLine + 1}`);
         }
@@ -443,9 +548,11 @@ const generate = (
     patterns: [...DEFAULT_PATTERNS],
     currentFunctionCall: [],
     currentParenthesesState: 0,
+    mainFunction: "not-started",
+    currentBracketState: 0,
     result: [],
-    usedParams: new Set(),
-    usedVariables: new Set(),
+    usedParams: new Map(),
+    usedVariables: new Map(),
   };
 
   generateImpl(generatorState);
@@ -458,6 +565,15 @@ const generate = (
       `Unclosed function call: ${generatorState.currentFunctionCall.map((call) => call.name).join(", ")}`
     );
   }
+  if (generatorState.currentParenthesesState !== 0) {
+    throw new Error(`Unmatched parentheses at the end of processing`);
+  }
+  if (generatorState.currentBracketState !== 0) {
+    throw new Error(`Unmatched brackets at the end of processing`);
+  }
+  if (generatorState.mainFunction === "started") {
+    throw new Error(`Main function context started but not ended at the end of processing`);
+  }
 
   // merge results
   // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
@@ -465,8 +581,9 @@ const generate = (
 
   return {
     code: codeGenerator.emit(generatorState.result),
-    params: Array.from(generatorState.usedParams),
-    variables: Array.from(generatorState.usedVariables),
+    params: Array.from(generatorState.usedParams.keys()).sort(),
+    variables: Array.from(generatorState.usedVariables.keys()).sort(),
+    hasMainFunction: generatorState.mainFunction === "ended",
   };
 };
 

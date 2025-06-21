@@ -93,6 +93,14 @@ export interface CodePattern {
   // if the `replace` is a string, it will be used to replace the whole matched pattern
   // if the `replace` is an array, it will replace each matching group in the pattern if not null
   readonly replace?: string | (string | null)[];
+
+  // if present, will be used to determine the type of the pattern
+  // should only be available for "variable", "method", and "property" types
+  readonly variableType?: "shader-variable";
+
+  // if present, will be used to determine the type of the parameter
+  // should only be available for "param" type
+  readonly paramType?: "int";
 }
 
 // ============================================================================
@@ -103,6 +111,7 @@ export interface GenerateResult {
   code: string;
   params: string[];
   variables: string[];
+  hasMainFunction: boolean;
 }
 
 export interface Generator {

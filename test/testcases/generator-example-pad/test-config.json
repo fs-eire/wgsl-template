@@ -6,11 +6,11 @@
       "generators": {
         "dynamic": {
           "expectedParams": ["dim_value_zero", "is_float16", "pad_mode"],
-          "expectedVariables": ["MAIN", "output"]
+          "expectedVariables": ["output"]
         },
         "static-cpp-literal": {
           "expectedParams": ["dim_value_zero", "is_float16", "pad_mode"],
-          "expectedVariables": ["MAIN", "output"]
+          "expectedVariables": ["output"]
         }
       }
     }

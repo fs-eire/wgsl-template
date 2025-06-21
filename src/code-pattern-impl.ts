@@ -7,7 +7,9 @@ export const DEFAULT_PATTERNS: CodePattern[] = [
   { type: "control", pattern: /\(/ },
   { type: "control", pattern: /\)/ },
   { type: "control", pattern: /,/ },
-  { type: "variable", pattern: /(?<![a-zA-Z0-9_])(\$MAIN)\b/d, replace: ["MAIN"] },
+  { type: "control", pattern: /{/ },
+  { type: "control", pattern: /}/ },
+  { type: "control", pattern: /(?<![a-zA-Z0-9_])(\$MAIN\s*\{)/ },
 ];
 
 //

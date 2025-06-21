@@ -1,0 +1,7 @@
+MainFunctionStart();
+emit("\n");
+emit("    let index = global_id.x;\n");
+emit("\n");
+emit("    output[index] = input[index] * 2.0;\n");
+MainFunctionEnd();
+emit("\n");
