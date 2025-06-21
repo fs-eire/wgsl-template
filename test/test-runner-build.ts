@@ -56,12 +56,48 @@ export async function runBuildTest(testCase: TestCase, debug?: boolean): Promise
       }
 
       // Run the build function for this generator
-      await build(srcDir, {
+      const buildResult = await build({
+        sourceDir: srcDir,
         templateExt: config.templateExt || ".wgsl.template",
         outDir: genDir,
         generator: generatorName,
-        namespaces: config.namespaces,
       });
+
+      // Show debug information if debug mode is enabled
+      if (debug) {
+        console.log(`  Build status: ${buildResult.status}`);
+        if (buildResult.files) {
+          console.log(`  Generated ${buildResult.files.size} file(s):`);
+          for (const [filePath, fileInfo] of buildResult.files) {
+            if (fileInfo.error) {
+              console.log(`    ❌ ${filePath}: ${fileInfo.error}`);
+            } else {
+              console.log(`    ✅ ${filePath} (${fileInfo.size} bytes)`);
+            }
+          }
+        }
+        if (buildResult.error) {
+          console.log(`  Build error: ${buildResult.error}`);
+        }
+      }
+
+      // Check if the build result indicates an error
+      if (buildResult.status !== "success") {
+        if (generatorConfig.expectsError) {
+          // This generator expects an error, so this is correct behavior
+          if (debug) {
+            console.log(`  ✅ Generator "${generatorName}" correctly produced an error as expected`);
+          }
+          continue; // Skip to next generator
+        } else {
+          // This generator should succeed, but it failed
+          return {
+            name: testCase.name,
+            passed: false,
+            error: `Generator "${generatorName}": Build failed with status "${buildResult.status}": ${buildResult.error || "Unknown error"}`,
+          };
+        }
+      }
 
       // If this generator expects an error but we got here without throwing, that's a failure
       if (generatorConfig.expectsError) {
@@ -78,7 +114,7 @@ export async function runBuildTest(testCase: TestCase, debug?: boolean): Promise
         throw new Error(`Expected directory for generator "${generatorName}" does not exist: ${expectedGenDir}`);
       }
 
-      await compareDirectories(genDir, expectedGenDir, `${testCase.name} (${generatorName})`);
+      await compareDirectories(genDir, expectedGenDir, `${testCase.name} (${generatorName})`, debug);
     } catch (error) {
       if (generatorConfig.expectsError) {
         const expectedError = generatorConfig.expectsError;
@@ -113,7 +149,12 @@ export async function runBuildTest(testCase: TestCase, debug?: boolean): Promise
   };
 }
 
-async function compareDirectories(genDir: string, expectedDir: string, testName: string): Promise<void> {
+async function compareDirectories(
+  genDir: string,
+  expectedDir: string,
+  testName: string,
+  debug?: boolean
+): Promise<void> {
   // Get all files in both directories
   const genFiles = getAllFiles(genDir, genDir);
   const expectedFiles = getAllFiles(expectedDir, expectedDir);
@@ -132,16 +173,23 @@ async function compareDirectories(genDir: string, expectedDir: string, testName:
     const expectedContent = fs.readFileSync(expectedFilePath, "utf8");
 
     if (genContent !== expectedContent) {
-      throw new Error(
-        `${testName}: File content mismatch: ${expectedFile}\n============== Generated: ==============\n${genContent}\n============== Expected: ==============\n${expectedContent}`
-      );
+      if (debug) {
+        throw new Error(
+          `${testName}: File content mismatch: ${expectedFile}\n============== Generated: ==============\n${genContent}\n============== Expected: ==============\n${expectedContent}`
+        );
+      } else {
+        throw new Error(`${testName}: File content mismatch: ${expectedFile}`);
+      }
     }
   }
 
   // Check for unexpected generated files
   for (const genFile of genFiles) {
     if (!expectedFiles.includes(genFile)) {
-      console.warn(`${testName}: Unexpected generated file: ${genFile}`);
+      if (debug) {
+        console.warn(`${testName}: Unexpected generated file: ${genFile}`);
+      }
+      // In non-debug mode, silently ignore unexpected files unless they are errors
     }
   }
 }

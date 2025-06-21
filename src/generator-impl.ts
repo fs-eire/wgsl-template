@@ -3,7 +3,9 @@ import { createParamPattern, DEFAULT_PATTERNS, lookupPattern } from "./code-patt
 import type {
   CodeGenerator,
   CodeSegment,
+  CodeSegmentArg,
   CodePattern,
+  CodePatternArgType,
   Generator,
   GenerateResult,
   TemplateRepository,
@@ -16,6 +18,7 @@ interface FunctionCallState {
   readonly name: string;
   readonly parenthesesState: number;
   readonly params: CodeSegment[][];
+  readonly argTypes?: readonly CodePatternArgType[]; // Types for each argument
 
   currentParam: CodeSegment[];
 }
@@ -42,8 +45,8 @@ interface GeneratorState {
   currentBracketState: number; // 0: no brackets, >0: nested brackets count
 
   result: CodeSegment[];
-  usedParams: Map<string, Required<CodePattern["paramType"]>>; // name -> type
-  usedVariables: Map<string, Required<CodePattern["variableType"]>>; // name -> type
+  usedParams: Map<string, NonNullable<CodePattern["paramType"]>>; // name -> type
+  usedVariables: Map<string, NonNullable<CodePattern["variableType"]>>; // name -> type
 }
 
 /**
@@ -133,6 +136,9 @@ function generateImpl(generatorState: GeneratorState) {
       }
     } else {
       if (currentFunctionCall.length > 0) {
+        if (type === "raw") {
+          throw new Error(`Raw content inside function call at line ${currentLine + 1}, column ${currentColumn}`);
+        }
         // If we are inside a function call, append to the current parameter
         currentFunctionCall[currentFunctionCall.length - 1].currentParam.push(segment);
       } else {
@@ -218,11 +224,17 @@ function generateImpl(generatorState: GeneratorState) {
                       }
                     }
                   }
+
+                  const codeSegmentArgs: CodeSegmentArg[] = params.map((param, index) => ({
+                    type: call.argTypes?.[index] ?? "auto",
+                    code: param,
+                  }));
+
                   output(
                     "expression",
                     call.caller
-                      ? codeGenerator.method(call.caller, call.name, params)
-                      : codeGenerator.function(call.name, params)
+                      ? codeGenerator.method(call.caller, call.name, codeSegmentArgs)
+                      : codeGenerator.function(call.name, codeSegmentArgs)
                   );
                 }
               } else {
@@ -308,6 +320,7 @@ function generateImpl(generatorState: GeneratorState) {
               params: [],
               currentParam: [],
               caller,
+              argTypes: next.pattern.argTypes,
             });
 
             currentParenthesesState++;
@@ -579,10 +592,17 @@ const generate = (
   // if 2 segments are "raw" or "code" and they are adjacent, merge them into one segment
   generatorState.result = mergeAdjacentSegments(generatorState.result);
 
+  // Sort params and variables by keys before returning
+  const sortedParamKeys = Array.from(generatorState.usedParams.keys()).sort();
+  const sortedVariableKeys = Array.from(generatorState.usedVariables.keys()).sort();
+
+  const sortedParams = new Map(sortedParamKeys.map((key) => [key, generatorState.usedParams.get(key)!]));
+  const sortedVariables = new Map(sortedVariableKeys.map((key) => [key, generatorState.usedVariables.get(key)!]));
+
   return {
     code: codeGenerator.emit(generatorState.result),
-    params: Array.from(generatorState.usedParams.keys()).sort(),
-    variables: Array.from(generatorState.usedVariables.keys()).sort(),
+    params: sortedParams,
+    variables: sortedVariables,
     hasMainFunction: generatorState.mainFunction === "ended",
   };
 };

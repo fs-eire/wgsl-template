@@ -3,7 +3,7 @@ emit("\n");
 MainFunctionStart();
 emit("\n");
 emit("  ");
-emit(shader.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size"));
+emit(shader_helper.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size"));
 emit(";\n");
 emit("\n");
 emit("  let constant_value =\n");
@@ -67,7 +67,7 @@ emit("\n");
 emit("    input_index += select(u32(in_coord)\n");
 if (variable["output"].Rank() > 1) {
 emit("        * ");
-emit(GetElementAt("uniforms.data_stride", "dim", `${variable["output"].Rank()} - 1`));
+emit(GetElementAt("uniforms.data_stride", "dim", variable["output"].Rank() - 1));
 emit("\n");
 }
 emit("        , u32(in_coord), dim == ");

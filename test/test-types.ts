@@ -41,7 +41,6 @@ export interface BuildTestConfig extends BaseTestConfig {
       expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
     }
   >;
-  namespaces?: string[];
 }
 
 // Generator test configuration

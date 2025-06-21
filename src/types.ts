@@ -61,6 +61,11 @@ export interface CodeSegment {
   content: string;
 }
 
+export interface CodeSegmentArg {
+  type: CodePatternArgType;
+  code: CodeSegment[];
+}
+
 export interface CodeGenerator {
   // Emit a string as code
   emit(code: CodeSegment[]): string;
@@ -75,18 +80,34 @@ export interface CodeGenerator {
   property(obj: string, propertyName: string): string;
 
   // Generate an expression for a function call
-  function(name: string, params: CodeSegment[][]): string;
+  function(name: string, args: CodeSegmentArg[]): string;
 
   // Generate an expression for a method call on an object
-  method(obj: string, methodName: string, params: CodeSegment[][]): string;
+  method(obj: string, methodName: string, args: CodeSegmentArg[]): string;
 }
 
 // ============================================================================
 // Code Pattern Types
 // ============================================================================
 
+/**
+ * Defines the type of code pattern.
+ */
+export type CodePatternType = "control" | "param" | "variable" | "function" | "method" | "property";
+
+export type CodePatternVariableType = "shader-variable";
+export type CodePatternParamType = "int";
+
+/**
+ * Defines the type of argument for a function or method.
+ *
+ * "expression" - The argument is an expression. Willbe emitted as is.
+ * "string" - The argument is a string. Will be emitted as a string literal.
+ */
+export type CodePatternArgType = "expression" | "string" | "auto";
+
 export interface CodePattern {
-  readonly type: "control" | "param" | "variable" | "function" | "method" | "property";
+  readonly type: CodePatternType;
   readonly pattern: string | RegExp;
 
   // if present, this pattern will be replaced with the given value
@@ -96,11 +117,15 @@ export interface CodePattern {
 
   // if present, will be used to determine the type of the pattern
   // should only be available for "variable", "method", and "property" types
-  readonly variableType?: "shader-variable";
+  readonly variableType?: CodePatternVariableType;
 
   // if present, will be used to determine the type of the parameter
   // should only be available for "param" type
-  readonly paramType?: "int";
+  readonly paramType?: CodePatternParamType;
+
+  // if present, will be used to determine the type of the argument
+  // should only be available for "function" and "method" types
+  readonly argTypes?: CodePatternArgType[];
 }
 
 // ============================================================================
@@ -109,8 +134,8 @@ export interface CodePattern {
 
 export interface GenerateResult {
   code: string;
-  params: string[];
-  variables: string[];
+  params: Map<string, NonNullable<CodePattern["paramType"]>>; // name -> type
+  variables: Map<string, NonNullable<CodePattern["variableType"]>>; // name -> type
   hasMainFunction: boolean;
 }
 
@@ -156,11 +181,6 @@ export interface SourceBuilderOptions {
    * The extension of template files.
    */
   templateExt: string;
-
-  /**
-   * The namespaces to use for the source builder.
-   */
-  namespaces?: string[];
 
   /**
    * The prefix to use for include paths.

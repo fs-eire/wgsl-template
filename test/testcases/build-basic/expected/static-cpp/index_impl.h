@@ -4,8 +4,38 @@
 #ifndef INCLUDED_BY_WGSL_GEN_IMPL
 #error "This file is expected to be included by wgsl-gen impl. Do not include it directly."
 #endif
+
+// Helper functions or macros
+
+#pragma push_macro("MainFunctionStart")
+#undef MainFunctionStart
+#define MainFunctionStart ss_ptr = &shader_helper.MainFunctionBody
+#pragma push_macro("MainFunctionEnd")
+#undef MainFunctionEnd
+#define MainFunctionEnd ss_ptr = &shader_helper.AdditionalImplementation
+
+// Helper templates
+
+namespace wgsl_detail {
+template <typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+std::string pass_as_string(T&& v) {
+  return std::to_string(std::forward<T>(v));
+}
+template <typename...>
+std::string_view pass_as_string(std::string_view sv) {
+  return sv;
+}
+template <typename T>
+std::string pass_as_string(T&& v) {
+  return std::forward<T>(v);
+}
+}  // namespace wgsl_detail
+
 #include "/string_table.h"
 
 // Include template implementations
 
-#include "gen/shader/triangle.h"
+#include "generated/shader/triangle.h"
+
+#pragma pop_macro("MainFunctionStart")
+#pragma pop_macro("MainFunctionEnd")

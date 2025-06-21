@@ -21,10 +21,19 @@ const BUILT_IN_PATTERNS: [string, CodePattern][] = [
     {
       type: "function",
       pattern: /\b(guardAgainstOutOfBoundsWorkgroupSizes)\s*\(/d,
-      replace: ["shader.GuardAgainstOutOfBoundsWorkgroupSizes"],
+      replace: ["shader_helper.GuardAgainstOutOfBoundsWorkgroupSizes"],
+      argTypes: ["string"],
     },
   ],
-  ["getElementAt", { type: "function", pattern: /\b(getElementAt)\s*\(/d, replace: ["GetElementAt"] }],
+  [
+    "getElementAt",
+    {
+      type: "function",
+      pattern: /\b(getElementAt)\s*\(/d,
+      replace: ["GetElementAt"],
+      argTypes: ["string", "auto", "expression", "expression"],
+    },
+  ],
 ];
 
 //
@@ -53,6 +62,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(offsetToIndices)\s*\(/d,
       replace: [null, "OffsetToIndices"],
+      argTypes: ["string"],
     },
   ],
   [
@@ -61,6 +71,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(indicesToOffset)\s*\(/d,
       replace: [null, "IndicesToOffset"],
+      argTypes: ["string"],
     },
   ],
   [
@@ -69,6 +80,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(indicesSet)\s*\(/d,
       replace: [null, "IndicesSet"],
+      argTypes: ["string", "auto", "auto"],
     },
   ],
   [
@@ -77,6 +89,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(indicesGet)\s*\(/d,
       replace: [null, "IndicesGet"],
+      argTypes: ["string", "auto"],
     },
   ],
   [
@@ -101,6 +114,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(setByIndices)\s*\(/d,
       replace: [null, "SetByIndices"],
+      argTypes: ["string", "string"],
     },
   ],
   [
@@ -125,6 +139,7 @@ export const INDICES_HELPER_PATTERNS: [string, CodePattern][] = [
       type: "method",
       pattern: /\b([_a-zA-Z][_a-zA-Z0-9]*)\s*\.\s*(getByIndices)\s*\(/d,
       replace: [null, "GetByIndices"],
+      argTypes: ["string"],
     },
   ],
 ];

@@ -159,7 +159,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
           // Check expected params if specified
           if (entryConfig.expectedParams) {
-            const actualParams = generateResult.params.sort();
+            const actualParams = Array.from(generateResult.params.keys());
             const expectedParams = entryConfig.expectedParams.sort();
 
             if (JSON.stringify(actualParams) !== JSON.stringify(expectedParams)) {
@@ -177,7 +177,7 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
           // Check expected variables if specified
           if (entryConfig.expectedVariables) {
-            const actualVariables = generateResult.variables.sort();
+            const actualVariables = Array.from(generateResult.variables.keys());
             const expectedVariables = entryConfig.expectedVariables.sort();
 
             if (JSON.stringify(actualVariables) !== JSON.stringify(expectedVariables)) {

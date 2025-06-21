@@ -6,29 +6,35 @@ import type {
   TemplateRepository,
   TemplatePass2,
   TemplateBuildResult,
+  CodeSegmentArg,
 } from "./types.js";
 
-const renderParam = (param: CodeSegment[]): string => {
+const renderArg = (arg: CodeSegmentArg): string => {
   const render = (segment: CodeSegment): string => {
     switch (segment.type) {
       case "code":
         return segment.content;
-      default:
+      default: // expression
         return `\${${segment.content}}`;
     }
   };
 
-  if (param.length === 0) {
+  if (arg.code.length === 0) {
     return "";
-  } else if (param.length === 1) {
-    switch (param[0].type) {
-      case "code":
-        return JSON.stringify(param[0].content);
-      default:
-        return param[0].content;
+  } else if (arg.code.length === 1) {
+    if (arg.type === "string" && arg.code[0].type === "expression") {
+      return `\`\${${arg.code[0].content}}\``;
+    } else if (arg.type !== "expression" && arg.code[0].type === "code") {
+      return JSON.stringify(arg.code[0].content);
+    } else {
+      return arg.code[0].content;
     }
   } else {
-    return `\`${param.map(render).join("")}\``;
+    if (arg.type !== "expression") {
+      return `\`${arg.code.map(render).join("")}\``;
+    } else {
+      return arg.code.map((segment) => segment.content).join("");
+    }
   }
 };
 
@@ -70,24 +76,24 @@ export class DynamicCodeGenerator implements CodeGenerator, SourceBuilder {
   property(obj: string, propertyName: string): string {
     return `variable[${JSON.stringify(obj)}].${propertyName}`;
   }
-  function(name: string, params: CodeSegment[][]): string {
+  function(name: string, args: CodeSegmentArg[]): string {
     const code = [name, "("];
 
-    for (let i = 0; i < params.length; i++) {
-      code.push(renderParam(params[i]));
-      if (i < params.length - 1) {
+    for (let i = 0; i < args.length; i++) {
+      code.push(renderArg(args[i]));
+      if (i < args.length - 1) {
         code.push(", ");
       }
     }
     code.push(")");
     return code.join("");
   }
-  method(obj: string, methodName: string, params: CodeSegment[][]): string {
+  method(obj: string, methodName: string, args: CodeSegmentArg[]): string {
     const code = [`variable[${JSON.stringify(obj)}]`, ".", methodName, "("];
 
-    for (let i = 0; i < params.length; i++) {
-      code.push(renderParam(params[i]));
-      if (i < params.length - 1) {
+    for (let i = 0; i < args.length; i++) {
+      code.push(renderArg(args[i]));
+      if (i < args.length - 1) {
         code.push(", ");
       }
     }
