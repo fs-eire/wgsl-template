@@ -1,39 +1,78 @@
-# GitHub Actions Setup for CI/CD Pipeline
+# Publishing Guide
 
-This project uses GitHub Actions for both Continuous Integration (CI) and automatic publishing to NPM.
+This project uses an automated CI/CD pipeline with three separate GitHub Actions workflows for maximum security and isolation.
 
-## 🔄 CI Pipeline (ci.yml)
+## 🚀 Workflow Overview
 
-**Triggers**:
+### 1. CI Pipeline (`.github/workflows/ci.yml`)
 
-- Push to `main` or `develop` branches
-- Pull requests to `main` or `develop` branches
+**Trigger:** Every push to `main` and all pull requests  
+**Permissions:** `contents: read`, `pull-requests: write`  
+**Purpose:** Build, test, lint, and auto-fix formatting
 
-**Process**:
+- ✅ Runs on every PR and main branch push
+- 🔧 Auto-fixes formatting on PRs only (commits back to PR branch)
+- ❌ Fails on main if formatting issues exist (requires manual fix)
+- 🔒 **Never pushes to main branch** - maintains main branch protection
+- 🛡️ Minimal permissions for security
 
-1. **Install**: `npm ci`
-2. **Build**: `npm run build`
-3. **Lint**: `npm run lint`
-4. **Format Check**: `npm run format`
-   - **For Pull Requests**: Auto-fix formatting issues and commit to PR branch
-   - **For Main Branch**: Fail the job (no auto-fix, requires manual fix)
-   - **Always**: Fail the CI job if formatting issues exist
-5. **Test**: `npm test` (only if no formatting issues)
+### 2. Auto-Publish Pipeline (`.github/workflows/auto-publish.yml`)
 
-**Auto-Format Behavior**:
+**Trigger:** After CI passes on main branch  
+**Permissions:** `contents: write`, `id-token: write`  
+**Purpose:** Automatically publish when version bumps are detected
 
-- **Pull Requests**:
-  - Detects unformatted files
-  - Automatically runs Prettier to fix formatting
-  - Commits fixes to the PR branch with `[skip ci]`
-  - **Fails the CI job** to require review of formatting changes
-- **Main Branch**:
-  - Detects unformatted files
-  - **Fails the CI job** without auto-fixing
-  - Requires manual `npm run format` and commit
-  - **Prevents auto-publish** from running with unformatted code
+- 🔍 Runs only after CI passes on main
+- 📦 Publishes to NPM when `package.json` version > published version
+- 🏷️ Creates Git tags and GitHub releases
+- 🚀 **Never bumps versions** - only publishes existing version changes
+- 🔒 Only publishes, never modifies code
 
-## 🚀 Auto-Publishing Pipeline (auto-publish.yml)
+### 3. Manual Publish Pipeline (`.github/workflows/manual-publish.yml`)
+
+**Trigger:** Manual workflow dispatch  
+**Permissions:** `contents: write`, `id-token: write`  
+**Purpose:** Manual version bumping and publishing with dry-run support
+
+- 👤 Manually triggered from GitHub Actions UI
+- 🔢 Supports patch/minor/major version bumps
+- 🔍 Includes dry-run mode for testing
+- 📝 Commits version bump to main
+- 📦 Publishes to NPM after version bump
+
+## 🔄 How It Works
+
+### Development Workflow
+
+1. **Create PR** → CI runs with auto-formatting
+2. **Merge to main** → CI runs again
+3. **Manual version bump** (via Manual Publish workflow)
+4. **Auto-publish** detects version change and publishes
+
+### Key Security Features
+
+- 🛡️ **Workflow Isolation**: Each workflow has minimal required permissions
+- 🔒 **No Code Modification in Auto-Publish**: Only reads and publishes
+- 🚫 **Protected Main Branch**: Auto-publish never pushes code changes
+- 🏷️ **Tag-Only Automation**: Auto-publish only creates tags, not commits
+
+### Publishing Process
+
+#### Option 1: Manual Publish (Recommended)
+
+1. Go to **Actions** → **Manual Publish**
+2. Click **Run workflow**
+3. Select version bump type (patch/minor/major)
+4. Optionally enable dry-run for testing
+5. Workflow will version bump and publish automatically
+
+#### Option 2: Manual Version Bump + Auto-Publish
+
+1. Manually update `package.json` version
+2. Commit and push to main
+3. Auto-publish will detect the version change and publish
+
+## 🔧 Required Setup
 
 ### 1. NPM Token Setup
 
@@ -62,7 +101,18 @@ To publish to NPM, you need to set up an NPM access token:
    - Name: `NPM_TOKEN`
    - Value: Your NPM access token
 
-### 2. Package Configuration
+### 2. Repository Permissions
+
+**✅ Default Setup (Recommended)**  
+The workflows are designed to work with default GitHub permissions. No additional setup should be needed.
+
+**🔧 If You Encounter Permission Issues:**
+
+1. **Go to Repository Settings** → **Actions** → **General**
+2. **Workflow permissions**: Select "Read and write permissions"
+3. **Allow GitHub Actions to create and approve pull requests**: ✅ Check this
+
+### 3. Package Configuration
 
 Make sure your `package.json` has the correct configuration:
 
@@ -76,85 +126,41 @@ Make sure your `package.json` has the correct configuration:
 }
 ```
 
-## 🚀 How It Works
+## 🛡️ Security & Troubleshooting
 
-### Automatic Publishing (auto-publish.yml)
+### Common Issues
 
-**Triggers**: Every push to `main` branch (excluding README, docs changes)
+**CI Permission Errors:**
 
-**Version Bump Logic**:
+- Error: `permission denied to github-actions[bot]`
+- Solution: Enable "Read and write permissions" in Settings → Actions → General
 
-- **MAJOR**: Commit messages containing "breaking" or "major"
-- **MINOR**: Commit messages containing "feat", "feature", or "minor"
-- **PATCH**: All other commits (default)
+**Auto-Publish Not Triggered:**
 
-**Process**:
+- Ensure CI passes first
+- Check that `package.json` version > published NPM version
+- Verify `NPM_TOKEN` secret is configured
 
-1. Install dependencies and run tests
-2. Build the project
-3. Determine version bump type from commit messages
-4. Bump version in package.json
-5. Commit and tag the new version
-6. Publish to NPM
-7. Create GitHub release
+**Manual Publish Failures:**
 
-### Manual Publishing (manual-publish.yml)
+- Check NPM token permissions
+- Ensure package name is unique
+- Use dry-run mode to test first
 
-**Triggers**: Manual workflow dispatch
+### Monitoring
 
-**Features**:
+Check the **Actions** tab in your GitHub repository to monitor:
 
-- Choose version bump type (patch/minor/major)
-- Option to skip tests
-- Manual control over publishing
+- ✅ CI build status and test results
+- 📦 Auto-publish status and version detection
+- 🔧 Manual publish executions and results
 
-## 📝 Commit Message Guidelines
+### Manual Recovery
 
-To control version bumping, use these keywords in your commit messages:
+If auto-publishing fails, use the Manual Publish workflow:
 
-```bash
-# Patch version (1.0.0 → 1.0.1)
-git commit -m "fix: resolve template parsing issue"
-git commit -m "docs: update README"
-
-# Minor version (1.0.0 → 1.1.0)
-git commit -m "feat: add new code generator"
-git commit -m "feature: implement template caching"
-
-# Major version (1.0.0 → 2.0.0)
-git commit -m "breaking: change API interface"
-git commit -m "major: redesign template system"
-```
-
-## 🛡️ Safety Features
-
-- **Prevents Double Publishing**: Skips if commit message contains "chore: bump version"
-- **Test Validation**: Runs full test suite before publishing
-- **Build Verification**: Ensures project builds successfully
-- **Git History**: Maintains clean git history with version tags
-
-## 🔍 Monitoring
-
-Check the Actions tab in your GitHub repository to monitor:
-
-- Build status
-- Test results
-- Publishing success/failure
-- Version bump details
-
-## 🚨 Troubleshooting
-
-**Common Issues**:
-
-1. **NPM_TOKEN Invalid**: Regenerate NPM token and update GitHub secret
-2. **Permission Denied**: Ensure NPM token has publish permissions
-3. **Version Conflict**: Check if version already exists on NPM
-4. **Git Push Failed**: Ensure GitHub token has write permissions
-
-**Manual Recovery**:
-If auto-publishing fails, use the manual workflow:
-
-1. Go to Actions tab
-2. Select "Manual Publish" workflow
-3. Click "Run workflow"
-4. Choose version bump type and run
+1. Go to **Actions** → **Manual Publish**
+2. Click **Run workflow**
+3. Select version bump type
+4. Optionally enable dry-run to test
+5. Execute the workflow
