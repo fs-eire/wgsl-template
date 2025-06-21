@@ -4,13 +4,15 @@ This project uses GitHub Actions for both Continuous Integration (CI) and automa
 
 ## 🔄 CI Pipeline (ci.yml)
 
-**Triggers**: 
+**Triggers**:
+
 - Push to `main` or `develop` branches
 - Pull requests to `main` or `develop` branches
 
 **Process**:
+
 1. **Install**: `npm ci`
-2. **Build**: `npm run build` 
+2. **Build**: `npm run build`
 3. **Lint**: `npm run lint`
 4. **Format Check**: `npm run format`
    - **For Pull Requests**: Auto-fix formatting issues and commit to PR branch
@@ -19,18 +21,19 @@ This project uses GitHub Actions for both Continuous Integration (CI) and automa
 5. **Test**: `npm test` (only if no formatting issues)
 
 **Auto-Format Behavior**:
-- **Pull Requests**: 
+
+- **Pull Requests**:
   - Detects unformatted files
   - Automatically runs Prettier to fix formatting
   - Commits fixes to the PR branch with `[skip ci]`
   - **Fails the CI job** to require review of formatting changes
-- **Main Branch**: 
+- **Main Branch**:
   - Detects unformatted files
   - **Fails the CI job** without auto-fixing
   - Requires manual `npm run format` and commit
   - **Prevents auto-publish** from running with unformatted code
 
-## � Auto-Publishing Pipeline (auto-publish.yml)
+## 🚀 Auto-Publishing Pipeline (auto-publish.yml)
 
 ### 1. NPM Token Setup
 
@@ -39,14 +42,17 @@ To publish to NPM, you need to set up an NPM access token:
 1. **Create NPM Account**: If you don't have one, create an account at [npmjs.com](https://www.npmjs.com/)
 
 2. **Generate Access Token**:
+
    ```bash
    npm login
    npm token create --type=granular --scope=@your-scope
    ```
+
    Or use the NPM website:
+
    - Go to [NPM Access Tokens](https://www.npmjs.com/settings/tokens)
    - Click "Generate New Token"
-   - Choose "Granular Access Token" 
+   - Choose "Granular Access Token"
    - Set appropriate permissions for publishing
 
 3. **Add Token to GitHub Secrets**:
@@ -77,11 +83,13 @@ Make sure your `package.json` has the correct configuration:
 **Triggers**: Every push to `main` branch (excluding README, docs changes)
 
 **Version Bump Logic**:
+
 - **MAJOR**: Commit messages containing "breaking" or "major"
-- **MINOR**: Commit messages containing "feat", "feature", or "minor" 
+- **MINOR**: Commit messages containing "feat", "feature", or "minor"
 - **PATCH**: All other commits (default)
 
 **Process**:
+
 1. Install dependencies and run tests
 2. Build the project
 3. Determine version bump type from commit messages
@@ -95,6 +103,7 @@ Make sure your `package.json` has the correct configuration:
 **Triggers**: Manual workflow dispatch
 
 **Features**:
+
 - Choose version bump type (patch/minor/major)
 - Option to skip tests
 - Manual control over publishing
@@ -108,7 +117,7 @@ To control version bumping, use these keywords in your commit messages:
 git commit -m "fix: resolve template parsing issue"
 git commit -m "docs: update README"
 
-# Minor version (1.0.0 → 1.1.0)  
+# Minor version (1.0.0 → 1.1.0)
 git commit -m "feat: add new code generator"
 git commit -m "feature: implement template caching"
 
@@ -127,8 +136,9 @@ git commit -m "major: redesign template system"
 ## 🔍 Monitoring
 
 Check the Actions tab in your GitHub repository to monitor:
+
 - Build status
-- Test results  
+- Test results
 - Publishing success/failure
 - Version bump details
 
@@ -143,6 +153,7 @@ Check the Actions tab in your GitHub repository to monitor:
 
 **Manual Recovery**:
 If auto-publishing fails, use the manual workflow:
+
 1. Go to Actions tab
 2. Select "Manual Publish" workflow
 3. Click "Run workflow"

@@ -2,110 +2,110 @@ name: Auto Version Bump and Publish
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
     paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-      - '.gitignore'
-      - '.npmignore'
-      - 'docs/**'
+      - "README.md"
+      - "LICENSE"
+      - ".gitignore"
+      - ".npmignore"
+      - "docs/**"
 
 jobs:
   version-and-publish:
     runs-on: ubuntu-latest
-    
+
     # Only run if the commit doesn't already contain a version bump or skip ci
     if: "!contains(github.event.head_commit.message, 'chore: bump version') && !contains(github.event.head_commit.message, '[skip ci]')"
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        # Fetch full history for version bumping
-        fetch-depth: 0
-        # Use a token that can push back to the repository
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history for version bumping
+          fetch-depth: 0
+          # Use a token that can push back to the repository
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        registry-url: 'https://registry.npmjs.org/'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org/"
+          cache: "npm"
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npm test
 
-    - name: Build project
-      run: npm run build
+      - name: Build project
+        run: npm run build
 
-    - name: Configure Git
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-    - name: Determine version bump type
-      id: version-bump
-      run: |
-        # Check commit messages to determine bump type
-        COMMITS=$(git log --oneline $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline)
-        
-        if echo "$COMMITS" | grep -q -i "breaking\|major"; then
-          echo "bump_type=major" >> $GITHUB_OUTPUT
-          echo "Detected MAJOR version bump"
-        elif echo "$COMMITS" | grep -q -i "feat\|feature\|minor"; then
-          echo "bump_type=minor" >> $GITHUB_OUTPUT
-          echo "Detected MINOR version bump"
-        else
-          echo "bump_type=patch" >> $GITHUB_OUTPUT
-          echo "Detected PATCH version bump"
-        fi
+      - name: Determine version bump type
+        id: version-bump
+        run: |
+          # Check commit messages to determine bump type
+          COMMITS=$(git log --oneline $(git describe --tags --abbrev=0)..HEAD 2>/dev/null || git log --oneline)
 
-    - name: Bump version
-      id: version
-      run: |
-        # Bump version based on detected type
-        NEW_VERSION=$(npm version ${{ steps.version-bump.outputs.bump_type }} --no-git-tag-version)
-        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "New version: $NEW_VERSION"
+          if echo "$COMMITS" | grep -q -i "breaking\|major"; then
+            echo "bump_type=major" >> $GITHUB_OUTPUT
+            echo "Detected MAJOR version bump"
+          elif echo "$COMMITS" | grep -q -i "feat\|feature\|minor"; then
+            echo "bump_type=minor" >> $GITHUB_OUTPUT
+            echo "Detected MINOR version bump"
+          else
+            echo "bump_type=patch" >> $GITHUB_OUTPUT
+            echo "Detected PATCH version bump"
+          fi
 
-    - name: Update package-lock.json
-      run: npm install --package-lock-only
+      - name: Bump version
+        id: version
+        run: |
+          # Bump version based on detected type
+          NEW_VERSION=$(npm version ${{ steps.version-bump.outputs.bump_type }} --no-git-tag-version)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
 
-    - name: Commit version bump
-      run: |
-        git add package.json package-lock.json
-        git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
-        git tag ${{ steps.version.outputs.new_version }}
+      - name: Update package-lock.json
+        run: npm install --package-lock-only
 
-    - name: Push changes
-      run: |
-        git push origin main
-        git push origin ${{ steps.version.outputs.new_version }}
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.new_version }}"
+          git tag ${{ steps.version.outputs.new_version }}
 
-    - name: Publish to NPM
-      run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Push changes
+        run: |
+          git push origin main
+          git push origin ${{ steps.version.outputs.new_version }}
 
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.version.outputs.new_version }}
-        release_name: Release ${{ steps.version.outputs.new_version }}
-        body: |
-          ## Changes in ${{ steps.version.outputs.new_version }}
-          
-          Auto-generated release for version ${{ steps.version.outputs.new_version }}.
-          
-          ### Commits included:
-          ${{ github.event.head_commit.message }}
-          
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}
-        draft: false
-        prerelease: false
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          release_name: Release ${{ steps.version.outputs.new_version }}
+          body: |
+            ## Changes in ${{ steps.version.outputs.new_version }}
+
+            Auto-generated release for version ${{ steps.version.outputs.new_version }}.
+
+            ### Commits included:
+            ${{ github.event.head_commit.message }}
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/${{ github.event.before }}...${{ github.sha }}
+          draft: false
+          prerelease: false

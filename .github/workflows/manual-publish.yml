@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
     inputs:
       version_type:
-        description: 'Version bump type'
+        description: "Version bump type"
         required: true
-        default: 'patch'
+        default: "patch"
         type: choice
         options:
           - patch
           - minor
           - major
       skip_tests:
-        description: 'Skip tests before publishing'
+        description: "Skip tests before publishing"
         required: false
         default: false
         type: boolean
@@ -21,74 +21,74 @@ on:
 jobs:
   manual-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        registry-url: 'https://registry.npmjs.org/'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          registry-url: "https://registry.npmjs.org/"
+          cache: "npm"
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run tests
-      if: ${{ !inputs.skip_tests }}
-      run: npm test
+      - name: Run tests
+        if: ${{ !inputs.skip_tests }}
+        run: npm test
 
-    - name: Build project
-      run: npm run build
+      - name: Build project
+        run: npm run build
 
-    - name: Configure Git
-      run: |
-        git config --local user.email "action@github.com"
-        git config --local user.name "GitHub Action"
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
 
-    - name: Bump version
-      id: version
-      run: |
-        NEW_VERSION=$(npm version ${{ inputs.version_type }} --no-git-tag-version)
-        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "Manual version bump: $NEW_VERSION"
+      - name: Bump version
+        id: version
+        run: |
+          NEW_VERSION=$(npm version ${{ inputs.version_type }} --no-git-tag-version)
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "Manual version bump: $NEW_VERSION"
 
-    - name: Update package-lock.json
-      run: npm install --package-lock-only
+      - name: Update package-lock.json
+        run: npm install --package-lock-only
 
-    - name: Commit version bump
-      run: |
-        git add package.json package-lock.json
-        git commit -m "chore: manual bump version to ${{ steps.version.outputs.new_version }}"
-        git tag ${{ steps.version.outputs.new_version }}
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: manual bump version to ${{ steps.version.outputs.new_version }}"
+          git tag ${{ steps.version.outputs.new_version }}
 
-    - name: Push changes
-      run: |
-        git push origin main
-        git push origin ${{ steps.version.outputs.new_version }}
+      - name: Push changes
+        run: |
+          git push origin main
+          git push origin ${{ steps.version.outputs.new_version }}
 
-    - name: Publish to NPM
-      run: npm publish
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to NPM
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Create GitHub Release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ steps.version.outputs.new_version }}
-        release_name: Release ${{ steps.version.outputs.new_version }}
-        body: |
-          ## Manual Release ${{ steps.version.outputs.new_version }}
-          
-          This release was manually triggered with a ${{ inputs.version_type }} version bump.
-          
-          **Full Changelog**: https://github.com/${{ github.repository }}/commits/main
-        draft: false
-        prerelease: false
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_version }}
+          release_name: Release ${{ steps.version.outputs.new_version }}
+          body: |
+            ## Manual Release ${{ steps.version.outputs.new_version }}
+
+            This release was manually triggered with a ${{ inputs.version_type }} version bump.
+
+            **Full Changelog**: https://github.com/${{ github.repository }}/commits/main
+          draft: false
+          prerelease: false
