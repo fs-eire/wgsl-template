@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { WgslTemplateBuildError } from "./errors.js";
 import type {
   SourceBuilder,
@@ -188,6 +189,7 @@ export class StaticCodeGenerator implements CodeGenerator, SourceBuilder {
 
   #buildGenerateIndexImpl(
     repo: TemplateRepository<TemplatePass2>,
+    templateImplementationHash: Map<string, string>,
     includePathPrefix: string,
     templateExt: string
   ): string {
@@ -238,7 +240,14 @@ std::string pass_as_string(T&& v) {
         throw new Error(`Template name "${name}" does not end with the expected extension "${templateExt}"`);
       }
       const baseName = name.slice(0, -templateExt.length);
-      implContent.push(`#include "${includePathPrefix}generated/${baseName}.h"`);
+      const hash = templateImplementationHash.get(name);
+      if (!hash) {
+        throw new WgslTemplateBuildError(
+          `Missing hash for template implementation "${name}"`,
+          "output-validation-failed"
+        );
+      }
+      implContent.push(`#include "${includePathPrefix}generated/${baseName}.h"  // ${hash}`);
     }
 
     implContent.push("");
@@ -303,28 +312,36 @@ std::string pass_as_string(T&& v) {
     options: SourceBuilderOptions
   ): TemplateRepository<TemplateBuildResult> {
     const result = new Map<string, TemplateBuildResult>();
+    const templateImplementationHash = new Map<string, string>();
 
-    // STEP.1. Generate the index.h
-    result.set("index.h", this.#buildGenerateIndex(repo));
-
-    // STEP.2. Generate the string table if needed
-    if (this.#stringTable) {
-      result.set("string_table.h", this.#buildGenerateStringTable());
-    }
-
-    // STEP.3. Generate implementation index_impl.h
-    result.set(
-      "index_impl.h",
-      this.#buildGenerateIndexImpl(repo, options.includePathPrefix ?? "", options.templateExt)
-    );
-
-    // STEP.4. Generate each template implementation
+    // STEP.1. Generate each template implementation
     for (const [name, template] of repo.templates) {
       if (!name.endsWith(options.templateExt)) {
         throw new Error(`Template name "${name}" does not end with the expected extension "${options.templateExt}"`);
       }
       const baseName = name.slice(0, -options.templateExt.length);
-      result.set(`generated/${baseName}.h`, this.#buildTemplateImplementation(name, template));
+      const content = this.#buildTemplateImplementation(name, template);
+      result.set(`generated/${baseName}.h`, content);
+      templateImplementationHash.set(name, createHash("sha256").update(content).digest("hex"));
+    }
+
+    // STEP.2. Generate implementation index_impl.h
+    result.set(
+      "index_impl.h",
+      this.#buildGenerateIndexImpl(
+        repo,
+        templateImplementationHash,
+        options.includePathPrefix ?? "",
+        options.templateExt
+      )
+    );
+
+    // STEP.3. Generate the index.h
+    result.set("index.h", this.#buildGenerateIndex(repo));
+
+    // STEP.4. Generate the string table if needed
+    if (this.#stringTable) {
+      result.set("string_table.h", this.#buildGenerateStringTable());
     }
 
     return {
