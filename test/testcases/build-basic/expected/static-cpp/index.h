@@ -3,7 +3,6 @@
 #ifndef INCLUDED_BY_WGSL_GEN_HEADER
 #error "This file is expected to be included by wgsl-gen header. Do not include it directly."
 #endif
-#include "wgsl_gen/string_table.h"
 
 //
 // Template: shader/triangle.wgsl.template
