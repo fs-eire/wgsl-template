@@ -45,18 +45,18 @@ jobs:
           # Get current version
           CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
-          
+
           # Bump patch version
           npm version patch --no-git-tag-version
-          
+
           # Get new version
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "New version: $NEW_VERSION"
-          
+
           # Commit the version bump
           git add package.json
           git commit -m "chore: bump version to $NEW_VERSION [skip publish]"
-          
+
           # Push the changes
           git push origin main
 
