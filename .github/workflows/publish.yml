@@ -82,6 +82,6 @@ jobs:
           echo "Publishing to NPM..."
           npm publish --dry-run
           echo "Dry run successful, proceeding with actual publish..."
-          # npm publish
+          npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
