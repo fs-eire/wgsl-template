@@ -229,7 +229,8 @@ std::string pass_as_string(T&& v) {
 `);
 
     if (this.#stringTable) {
-      implContent.push(`#include "${includePathPrefix}/string_table.h"`);
+      const hash = templateImplementationHash.get("string_table.h");
+      implContent.push(`#include "${includePathPrefix}/string_table.h"  // ${hash}`);
     }
     implContent.push("");
     implContent.push("// Include template implementations");
@@ -241,12 +242,6 @@ std::string pass_as_string(T&& v) {
       }
       const baseName = name.slice(0, -templateExt.length);
       const hash = templateImplementationHash.get(name);
-      if (!hash) {
-        throw new WgslTemplateBuildError(
-          `Missing hash for template implementation "${name}"`,
-          "output-validation-failed"
-        );
-      }
       implContent.push(`#include "${includePathPrefix}generated/${baseName}.h"  // ${hash}`);
     }
 
@@ -325,7 +320,14 @@ std::string pass_as_string(T&& v) {
       templateImplementationHash.set(name, createHash("sha256").update(content).digest("hex"));
     }
 
-    // STEP.2. Generate implementation index_impl.h
+    // STEP.2. Generate the string table if needed
+    if (this.#stringTable) {
+      const content = this.#buildGenerateStringTable();
+      result.set("string_table.h", content);
+      templateImplementationHash.set("string_table.h", createHash("sha256").update(content).digest("hex"));
+    }
+
+    // STEP.3. Generate implementation index_impl.h
     result.set(
       "index_impl.h",
       this.#buildGenerateIndexImpl(
@@ -336,13 +338,8 @@ std::string pass_as_string(T&& v) {
       )
     );
 
-    // STEP.3. Generate the index.h
+    // STEP.4. Generate the index.h
     result.set("index.h", this.#buildGenerateIndex(repo));
-
-    // STEP.4. Generate the string table if needed
-    if (this.#stringTable) {
-      result.set("string_table.h", this.#buildGenerateStringTable());
-    }
 
     return {
       basePath: repo.basePath,
