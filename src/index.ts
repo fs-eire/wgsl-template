@@ -108,8 +108,19 @@ export const build = async (options: BuildOptions): Promise<BuildResult> => {
         // Create the directory if it doesn't exist
         await fs.mkdir(dirName, { recursive: true });
 
-        // Write the file
-        await fs.writeFile(fullPath, result, "utf8");
+        // Only write the file if content has changed
+        let shouldWrite = true;
+        try {
+          const existingContent = await fs.readFile(fullPath, "utf8");
+          shouldWrite = existingContent !== result;
+        } catch {
+          // File doesn't exist or can't be read, so we should write it
+          shouldWrite = true;
+        }
+
+        if (shouldWrite) {
+          await fs.writeFile(fullPath, result, "utf8");
+        }
 
         // Record successful file write
         await fs.stat(fullPath);
