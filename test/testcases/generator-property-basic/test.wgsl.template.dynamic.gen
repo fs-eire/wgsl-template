@@ -1,4 +1,3 @@
-emit("\n");
 emit("fn test_function() {\n");
 emit("    let tensor_rank = ");
 emit(variable["input_tensor"].Rank());

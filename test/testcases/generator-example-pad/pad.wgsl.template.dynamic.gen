@@ -1,5 +1,3 @@
-emit("\n");
-emit("\n");
 MainFunctionStart();
 emit("\n");
 emit("  ");
@@ -12,7 +10,6 @@ emit("      bitcast<vec2<f16>>(uniforms.constant_value)[0];\n");
 } else {
 emit("      bitcast<output_value_t>(uniforms.constant_value);\n");
 }
-emit("\n");
 if (param["dim_value_zero"]) {
 emit("  output[global_idx] = constant_value;\n");
 } else {

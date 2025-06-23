@@ -1,4 +1,3 @@
-emit("\n");
 emit("fn compute_kernel() {\n");
 emit("    let global_idx = get_global_id(0u);\n");
 emit("\n");

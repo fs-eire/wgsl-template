@@ -1,5 +1,13 @@
-import type { Parser, TemplateRepository, TemplatePass1, TemplatePass0 } from "./types.js";
+import type { Parser, TemplateRepository, TemplatePass1, TemplatePass0, ParsedLine } from "./types.js";
 import { WgslTemplateParseError } from "./errors.js";
+
+type ParseState = Map<
+  string,
+  {
+    lines: readonly ParsedLine[];
+    includeProcessed: boolean;
+  }
+>;
 
 /**
  * Parses raw content of a template file and remove comments.
@@ -8,7 +16,7 @@ import { WgslTemplateParseError } from "./errors.js";
  * while preserving the original line structure. Empty lines after comment removal
  * are preserved to maintain line numbers for error reporting.
  */
-function parseComments(raw: readonly string[]): string[] {
+function parseComments(filePath: string, raw: readonly string[]): string[] {
   const rawWithoutComments: string[] = [];
   let inMultiLineComment = false;
 
@@ -47,6 +55,12 @@ function parseComments(raw: readonly string[]): string[] {
     rawWithoutComments.push(processedLine.trimEnd());
   }
 
+  if (inMultiLineComment) {
+    throw new WgslTemplateParseError("Unterminated multi-line comment detected in template", "comment-removal", {
+      filePath,
+    });
+  }
+
   return rawWithoutComments;
 }
 
@@ -56,17 +70,8 @@ function parseComments(raw: readonly string[]): string[] {
  * @param includeStack represents the stack of currently processed includes
  * @param parseState a map that stores the state of each file being parsed
  */
-function parsePreprocessorIncludeDirectives(
-  includeStack: string[],
-  parseState: Map<
-    string,
-    {
-      lines: string[];
-      includeProcessed: boolean;
-    }
-  >
-): void {
-  const lines: string[] = [];
+function parsePreprocessorIncludeDirectives(includeStack: string[], parseState: ParseState): void {
+  const lines: ParsedLine[] = [];
 
   const currentFile = includeStack[includeStack.length - 1];
   const currentState = parseState.get(currentFile);
@@ -83,7 +88,8 @@ function parsePreprocessorIncludeDirectives(
   }
 
   for (let lineNumber = 0; lineNumber < currentState.lines.length; lineNumber++) {
-    const line = currentState.lines[lineNumber];
+    const parsedLine = currentState.lines[lineNumber];
+    const line = parsedLine.line;
     // Process each line and extract include directives
     const includeMatch = line.match(/^#include\s+(.+)$/);
     if (includeMatch) {
@@ -121,8 +127,9 @@ function parsePreprocessorIncludeDirectives(
       lines.push(...parseState.get(includePath)!.lines);
       includeStack.pop();
     } else {
-      // If no include directive, just add the line to the result
-      lines.push(line);
+      // If no include directive, just add the original line to the result
+      // (preserve comments in the output)
+      lines.push(parsedLine);
     }
   }
 
@@ -137,12 +144,13 @@ function parsePreprocessorIncludeDirectives(
  * @param fileName Name of the file being processed (for error reporting)
  * @returns Array of lines with macros defined and substituted
  */
-function parseMacroDirectives(lines: string[], fileName: string): string[] {
+function parseMacroDirectives(lines: ParsedLine[], fileName: string): ParsedLine[] {
   const macros = new Map<string, string>();
-  const processedLines: string[] = [];
+  const processedLines: ParsedLine[] = [];
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
-    const line = lines[lineNumber];
+    const parsedLine = lines[lineNumber];
+    let line = parsedLine.line;
 
     // Check for malformed #define directives
     if (line.trim().startsWith("#define ")) {
@@ -236,19 +244,22 @@ function parseMacroDirectives(lines: string[], fileName: string): string[] {
       }
 
       macros.set(macroName, expandedValue);
-      // Don't include the #define line in output
-      continue;
+
+      // Clear the line since it's a macro definition
+      line = "";
+    } else {
+      // Apply macro substitutions to the current line
+      for (const [macroName, macroValue] of macros) {
+        // Use word boundaries to ensure we only replace whole identifiers
+        const regex = new RegExp(`\\b${macroName}\\b`, "g");
+        line = line.replace(regex, macroValue);
+      }
     }
 
-    // Apply macro substitutions to the current line
-    let processedLine = line;
-    for (const [macroName, macroValue] of macros) {
-      // Use word boundaries to ensure we only replace whole identifiers
-      const regex = new RegExp(`\\b${macroName}\\b`, "g");
-      processedLine = processedLine.replace(regex, macroValue);
-    }
-
-    processedLines.push(processedLine);
+    processedLines.push({
+      line,
+      codeReference: parsedLine.codeReference,
+    });
   }
 
   return processedLines;
@@ -269,22 +280,20 @@ export const parser: Parser = {
    */ parse(repo: TemplateRepository<TemplatePass0>): TemplateRepository<TemplatePass1> {
     const pass1Repo = new Map<string, TemplatePass1>();
 
-    const parseState = new Map<
-      string,
-      {
-        lines: string[];
-        includeProcessed: boolean;
-      }
-    >();
+    const parseState: ParseState = new Map();
 
-    // STEP.1. Parse comments. Segments now contains:
-    //         - Raw segments
-    //         - Comment segments
+    // STEP.1. Parse comments.
     for (const [templateKey, template] of repo.templates) {
-      const rawWithoutComments = parseComments(template.raw);
+      const parsedLines = parseComments(templateKey, template.raw);
 
       parseState.set(templateKey, {
-        lines: rawWithoutComments,
+        lines: parsedLines.map((line, index) => ({
+          line,
+          codeReference: {
+            filePath: templateKey,
+            lineNumber: index + 1, // Line numbers are 1-based
+          },
+        })),
         includeProcessed: false,
       });
     }
@@ -295,6 +304,7 @@ export const parser: Parser = {
 
       pass1Repo.set(templateKey, {
         filePath: template.filePath,
+        raw: template.raw,
         pass1: parseState.get(templateKey)!.lines,
       });
     }
@@ -304,39 +314,8 @@ export const parser: Parser = {
       const processedLines = parseMacroDirectives([...template.pass1], templateKey);
       pass1Repo.set(templateKey, {
         filePath: template.filePath,
+        raw: template.raw,
         pass1: processedLines,
-      });
-    }
-
-    // STEP.4. Deal with empty lines:
-    // - Collapse multiple empty lines to single empty line
-    // - Remove heading/trailing empty lines
-    for (const [templateKey, template] of pass1Repo) {
-      const lines = template.pass1;
-      const collapsedLines: string[] = [];
-      let lastLineEmpty = false;
-      for (const line of lines) {
-        const isEmpty = line.trim() === "";
-        if (isEmpty) {
-          if (!lastLineEmpty) {
-            collapsedLines.push(line);
-            lastLineEmpty = true;
-          }
-        } else {
-          collapsedLines.push(line);
-          lastLineEmpty = false;
-        }
-      }
-      // Remove leading/trailing empty lines
-      while (collapsedLines.length > 0 && collapsedLines[0].trim() === "") {
-        collapsedLines.shift();
-      }
-      while (collapsedLines.length > 0 && collapsedLines[collapsedLines.length - 1].trim() === "") {
-        collapsedLines.pop();
-      }
-      pass1Repo.set(templateKey, {
-        filePath: template.filePath,
-        pass1: collapsedLines,
       });
     }
 

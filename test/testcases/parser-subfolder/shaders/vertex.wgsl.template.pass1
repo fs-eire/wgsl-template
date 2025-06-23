@@ -1,3 +1,4 @@
+
 @vertex
 fn vs_main(@builtin(vertex_index) vertex_index: u32) -> @builtin(position) vec4f {
     let pos = array<vec2f, 3>(

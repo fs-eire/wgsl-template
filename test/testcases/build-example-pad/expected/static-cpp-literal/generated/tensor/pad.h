@@ -17,7 +17,6 @@ Status ApplyTemplate<"tensor/pad.wgsl.template">(ShaderHelper& shader_helper, Te
   // Extract variables
   auto& __var_output = *params.var_output;
 
-(*ss_ptr) << "\n\n";
 MainFunctionStart();
 (*ss_ptr) << "\n  ";
 (*ss_ptr) << shader_helper.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size");
@@ -27,7 +26,6 @@ if (__param_is_float16) {
 } else {
 (*ss_ptr) << "      bitcast<output_value_t>(uniforms.constant_value);\n";
 }
-(*ss_ptr) << "\n";
 if (__param_dim_value_zero) {
 (*ss_ptr) << "  output[global_idx] = constant_value;\n";
 } else {

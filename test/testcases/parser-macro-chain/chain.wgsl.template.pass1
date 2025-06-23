@@ -1,3 +1,9 @@
+
+
+
+
+
+
 const value_a = 10;
 const value_b = (10 * 2);
 const value_c = ((10 * 2) + 5);

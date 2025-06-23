@@ -51,7 +51,7 @@ export async function runParserTest(testCase: TestCase, debug?: boolean): Promis
 
       // Parse expected content into lines (normalize line endings)
       const expectedLines = expectedContent.split(/\r?\n/);
-      const actualLines = Array.from(template.pass1);
+      const actualLines = template.pass1.map((line) => line.line);
 
       // Compare line by line
       if (actualLines.length !== expectedLines.length) {
