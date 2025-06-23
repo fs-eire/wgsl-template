@@ -1,21 +1,17 @@
-emit("\n");
 emit("fn process_data(input: f32) -> f32 {\n");
 if (param["DATA_TYPE"] == 1) {
-emit("\n");
 if (param["ENABLE_OPTIMIZATION"]) {
 emit("        return floor(input * 100.0) / 100.0;\n");
 } else {
 emit("        return floor(input * 50.0) / 50.0;\n");
 }
 } else if (param["DATA_TYPE"] == 2) {
-emit("\n");
 if (param["ENABLE_OPTIMIZATION"]) {
 emit("        return input * 1.5;\n");
 } else {
 emit("        return input * 1.2;\n");
 }
 } else {
-emit("\n");
 if (param["ENABLE_OPTIMIZATION"]) {
 emit("        return input * 2.0;\n");
 } else {

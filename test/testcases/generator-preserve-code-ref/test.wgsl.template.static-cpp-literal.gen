@@ -8,3 +8,4 @@
 (*ss_ptr) << "    let index = global_id.x;\n";
 // 5 | }
 (*ss_ptr) << "}\n";
+// 6 |

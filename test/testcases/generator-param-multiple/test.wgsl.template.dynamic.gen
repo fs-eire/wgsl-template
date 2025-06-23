@@ -1,4 +1,3 @@
-emit("\n");
 emit("fn compute_kernel() {\n");
 emit("    let buffer_size = ");
 emit(param["BUFFER_SIZE"]);
@@ -12,6 +11,5 @@ emit("    let optimized = true;\n");
 } else {
 emit("    let optimized = false;\n");
 }
-emit("\n");
 emit("    let total = buffer_size * workgroup_size;\n");
 emit("}\n");

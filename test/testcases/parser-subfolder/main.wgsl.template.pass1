@@ -1,3 +1,5 @@
+
+
 @vertex
 fn vs_main(@builtin(vertex_index) vertex_index: u32) -> @builtin(position) vec4f {
     let pos = array<vec2f, 3>(
@@ -8,6 +10,7 @@ fn vs_main(@builtin(vertex_index) vertex_index: u32) -> @builtin(position) vec4f
     return vec4f(pos[vertex_index], 0.0, 1.0);
 }
 
+
 fn get_triangle_color(index: u32) -> vec4f {
     let colors = array<vec4f, 3>(
         vec4f(1.0, 0.0, 0.0, 1.0),
@@ -16,6 +19,7 @@ fn get_triangle_color(index: u32) -> vec4f {
     );
     return colors[index % 3u];
 }
+
 
 @fragment
 fn fs_main() -> @location(0) vec4f {

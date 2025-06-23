@@ -1,4 +1,3 @@
-emit("\n");
 emit("fn process_tensor() {\n");
 if (variable["input_tensor"].Rank() > param["MIN_RANK"]) {
 emit("    let dims = ");

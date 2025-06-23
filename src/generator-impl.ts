@@ -13,6 +13,7 @@ import type {
   TemplatePass2,
   TemplatePass1,
   GenerateOptions,
+  ParsedLine,
 } from "./types.js";
 
 interface FunctionCallState {
@@ -26,7 +27,8 @@ interface FunctionCallState {
 }
 
 interface GeneratorState {
-  readonly pass1: readonly string[];
+  readonly repo: TemplateRepository<TemplatePass1>;
+  readonly pass1: readonly ParsedLine[];
   readonly codeGenerator: CodeGenerator;
 
   filePath: string;
@@ -156,8 +158,9 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
     }
   };
 
+  let previousLineWasEmpty = true;
   for (let i = 0; i < pass1.length; i++) {
-    const line = pass1[i];
+    const line = pass1[i].line;
     currentLine = i;
     currentColumn = 0;
 
@@ -387,7 +390,26 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
       const maxLineNumber = pass1.length;
       const lineNumberWidth = String(maxLineNumber).length;
       const paddedLineNumber = String(currentLine + 1).padStart(lineNumberWidth, " ");
-      output("raw", `// ${paddedLineNumber} | ${line}\n`);
+      const sourcePath = pass1[i].codeReference.filePath;
+      const sourceLine = generatorState.repo.templates.get(sourcePath)!.raw[pass1[i].codeReference.lineNumber - 1];
+      output("raw", `// ${paddedLineNumber} | ${sourceLine}\n`);
+    }
+
+    if (line === "") {
+      if (i === pass1.length - 1) {
+        // If this is the last line and it's empty, we can skip it
+        continue;
+      }
+
+      if (previousLineWasEmpty) {
+        // If we are ignoring empty lines, skip this line
+        continue;
+      }
+
+      // When previous line was not empty, will output the current empty line but reset the flag
+      previousLineWasEmpty = true;
+    } else {
+      previousLineWasEmpty = false;
     }
 
     if (line.startsWith("#")) {
@@ -662,6 +684,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
           );
         }
       }
+      previousLineWasEmpty = true; // Reset the empty line flag after processing a preprocessor directive
     } else {
       processCurrentLine();
     }
@@ -682,6 +705,7 @@ const generate = (
   }
 
   const generatorState: GeneratorState = {
+    repo,
     pass1,
     codeGenerator,
     filePath,

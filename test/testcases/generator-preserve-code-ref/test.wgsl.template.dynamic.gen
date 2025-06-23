@@ -8,3 +8,4 @@ emit("    let buffer_count = 4;\n");
 emit("    let index = global_id.x;\n");
 // 5 | }
 emit("}\n");
+// 6 |

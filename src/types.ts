@@ -16,14 +16,22 @@ export type TemplatePass0 = TemplateBase & {
   readonly raw: readonly string[];
 };
 
-export type TemplatePass1 = TemplateBase & {
+export interface ParsedLine {
+  line: string;
+  codeReference: {
+    filePath: string;
+    lineNumber: number;
+  };
+}
+
+export type TemplatePass1 = TemplatePass0 & {
   /**
    * The content after pass 1 processing, including:
    * - comments removal
    * - #include expansion
    * - #define expansion
    */
-  readonly pass1: readonly string[];
+  readonly pass1: readonly ParsedLine[];
 };
 
 export type TemplatePass2 = TemplateBase & {

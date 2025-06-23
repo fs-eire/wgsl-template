@@ -1,4 +1,3 @@
-emit("\n");
 emit("fn my_func(value: f32) {\n");
 if (param["ENABLE_FACTOR"]) {
 emit("    return value + 0.1;\n");
