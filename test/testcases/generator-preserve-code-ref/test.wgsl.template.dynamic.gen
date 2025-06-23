@@ -1,11 +1,18 @@
-// 1 | @compute @workgroup_size(128)
+//  1 | // This is a one line comment
+//  2 |
+//  3 | @compute @workgroup_size(128)
 emit("@compute @workgroup_size(128)\n");
-// 2 | fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+//  4 | fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 emit("fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {\n");
-// 3 |     let buffer_count = 4;
+//  5 |     let buffer_count = 4;  /* This
 emit("    let buffer_count = 4;\n");
-// 4 |     let index = global_id.x;
+//  6 |                               is
+emit("\n");
+//  7 |                               a
+//  8 |                               multi-line
+//  9 |                               comment */
+// 10 |     let index = global_id.x;
 emit("    let index = global_id.x;\n");
-// 5 | }
+// 11 | }
 emit("}\n");
-// 6 |
+// 12 |
