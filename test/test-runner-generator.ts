@@ -88,7 +88,9 @@ export async function runGeneratorTest(testCase: TestCase, debug?: boolean): Pro
 
       try {
         // Generate the actual output
-        const generateResult = generator.generate(entryConfig.templatePath, parsedRepo, codeGenerator);
+        const generateResult = generator.generate(entryConfig.templatePath, parsedRepo, codeGenerator, {
+          preserveCodeReference: config.preserveCodeReference,
+        });
         const actualOutput = generateResult.code;
 
         // If we expected an error but got here without throwing, that's a failure

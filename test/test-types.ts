@@ -46,6 +46,7 @@ export interface BuildTestConfig extends BaseTestConfig {
 // Generator test configuration
 export interface GeneratorTestConfig extends BaseTestConfig {
   type: "generator";
+  preserveCodeReference?: boolean; // Whether to preserve code references in generated output
   // Generator tests use object with template file paths as keys
   entries: Record<
     string,

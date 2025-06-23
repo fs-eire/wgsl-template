@@ -132,6 +132,10 @@ export interface CodePattern {
 // Generator Types
 // ============================================================================
 
+export interface GenerateOptions {
+  preserveCodeReference?: boolean;
+}
+
 export interface GenerateResult {
   code: string;
   params: Map<string, NonNullable<CodePattern["paramType"]>>; // name -> type
@@ -140,11 +144,17 @@ export interface GenerateResult {
 }
 
 export interface Generator {
-  generate(filePath: string, repo: TemplateRepository<TemplatePass1>, generator: CodeGenerator): GenerateResult;
+  generate(
+    filePath: string,
+    repo: TemplateRepository<TemplatePass1>,
+    generator: CodeGenerator,
+    options?: GenerateOptions
+  ): GenerateResult;
 
   generateDirectory(
     repo: TemplateRepository<TemplatePass1>,
-    generator: CodeGenerator
+    generator: CodeGenerator,
+    options?: GenerateOptions
   ): TemplateRepository<TemplatePass2>;
 }
 

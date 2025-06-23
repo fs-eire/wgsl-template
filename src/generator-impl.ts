@@ -12,6 +12,7 @@ import type {
   TemplateRepository,
   TemplatePass2,
   TemplatePass1,
+  GenerateOptions,
 } from "./types.js";
 
 interface FunctionCallState {
@@ -113,7 +114,7 @@ function matchNextPattern(
   return earliestMatch;
 }
 
-function generateImpl(generatorState: GeneratorState) {
+function generateImpl(generatorState: GeneratorState, options: GenerateOptions) {
   const { pass1, codeGenerator, preprocessIfStack, patterns, currentFunctionCall } = generatorState;
 
   let currentLine = generatorState.currentLine;
@@ -381,6 +382,13 @@ function generateImpl(generatorState: GeneratorState) {
       }
       output("code", "\n");
     };
+
+    if (options.preserveCodeReference) {
+      const maxLineNumber = pass1.length;
+      const lineNumberWidth = String(maxLineNumber).length;
+      const paddedLineNumber = String(currentLine + 1).padStart(lineNumberWidth, " ");
+      output("raw", `// ${paddedLineNumber} | ${line}\n`);
+    }
 
     if (line.startsWith("#")) {
       if (line.startsWith("#use ")) {
@@ -663,7 +671,8 @@ function generateImpl(generatorState: GeneratorState) {
 const generate = (
   filePath: string,
   repo: TemplateRepository<TemplatePass1>,
-  codeGenerator: CodeGenerator
+  codeGenerator: CodeGenerator,
+  options?: GenerateOptions
 ): GenerateResult => {
   const pass1 = repo.templates.get(filePath)?.pass1;
   if (!pass1) {
@@ -689,7 +698,7 @@ const generate = (
     usedVariables: new Map(),
   };
 
-  generateImpl(generatorState);
+  generateImpl(generatorState, options || {});
 
   if (generatorState.preprocessIfStack.length > 0) {
     throw new WgslTemplateGenerateError(
@@ -738,11 +747,11 @@ const generate = (
 export const generator: Generator = {
   generate,
 
-  generateDirectory(repo, codeGenerator): TemplateRepository<TemplatePass2> {
+  generateDirectory(repo, codeGenerator, options): TemplateRepository<TemplatePass2> {
     const result = new Map<string, TemplatePass2>();
 
     for (const [filePath, template] of repo.templates) {
-      const generateResult = generate(filePath, repo, codeGenerator);
+      const generateResult = generate(filePath, repo, codeGenerator, options);
       result.set(filePath, {
         filePath: template.filePath,
         generateResult,

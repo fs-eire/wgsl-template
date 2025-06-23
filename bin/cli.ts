@@ -295,6 +295,7 @@ Options:
                                  Available: "dynamic", "static-cpp", "static-cpp-literal"
   --ext <extension>              Template file extension (default: ".wgsl.template")
   --include-prefix, -I <prefix>  Include path prefix for generated headers
+  --preserve-code-ref            Preserve code references in generated output
   --clean, -c                    Clean output directory before building
   --debug, -d                    Enable debug output for detailed error information
   --help, -h                     Show this help message
@@ -335,7 +336,7 @@ async function main() {
       d: "debug",
     },
     string: ["input", "output", "generator", "ext", "include-prefix"],
-    boolean: ["help", "version", "clean", "debug"],
+    boolean: ["help", "version", "clean", "debug", "preserve-code-ref"],
   });
 
   const options = {
@@ -346,6 +347,7 @@ async function main() {
     generator: argv.generator,
     ext: argv.ext,
     includePrefix: argv["include-prefix"],
+    preserveCodeRef: argv["preserve-code-ref"],
     clean: argv.clean,
     debug: argv.debug,
   };
@@ -422,6 +424,9 @@ async function main() {
     if (options.includePrefix) {
       console.log(`  Include prefix: ${options.includePrefix}`);
     }
+    if (options.preserveCodeRef) {
+      console.log(`  Preserve code references: enabled`);
+    }
     if (options.clean) {
       console.log(`  Clean directory: enabled`);
     }
@@ -436,6 +441,7 @@ async function main() {
       templateExt,
       generator,
       includePathPrefix: options.includePrefix,
+      preserveCodeReference: options.preserveCodeRef,
     });
 
     // Calculate generation time
