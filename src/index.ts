@@ -42,6 +42,16 @@ export interface BuildOptions {
    * `#include "myproject/a/b/shader.wgsl"`
    */
   includePathPrefix?: string;
+
+  /**
+   * Whether to preserve code references in the generated output.
+   *
+   * If true, comments will be added to the generated code indicating the original template file and line number.
+   * This can be useful for debugging and tracing back to the source templates.
+   *
+   * Default is false.
+   */
+  preserveCodeReference?: boolean;
 }
 
 /**
@@ -80,7 +90,9 @@ export const build = async (options: BuildOptions): Promise<BuildResult> => {
     pass1 = parser.parse(pass0);
 
     const codeGenerator = resolveCodeGenerator(options.generator);
-    pass2 = generator.generateDirectory(pass1, codeGenerator);
+    pass2 = generator.generateDirectory(pass1, codeGenerator, {
+      preserveCodeReference: options.preserveCodeReference,
+    });
 
     const files = codeGenerator.build(pass2, {
       templateExt: options.templateExt,
