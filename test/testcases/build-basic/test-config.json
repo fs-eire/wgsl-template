@@ -2,6 +2,7 @@
   "type": "build",
   "description": "Basic build test with simple template",
   "generators": {
-    "static-cpp": {}
+    "static-cpp": {},
+    "dynamic": {}
   }
 }

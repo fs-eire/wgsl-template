@@ -40,3 +40,6 @@ jobs:
 
       - name: Test
         run: npm test
+
+      - name: Check generated JavaScript files ES5 compliance
+        run: npx es-check --checkFeatures -v es5 './test/testcases/**/*.dynamic.gen' './test/testcases/**/expected/dynamic/**/*.js'
