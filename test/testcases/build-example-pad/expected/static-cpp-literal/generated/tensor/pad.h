@@ -7,7 +7,7 @@
 
 template <>
 Status ApplyTemplate<"tensor/pad.wgsl.template">(ShaderHelper& shader_helper, TemplateParameter<"tensor/pad.wgsl.template">::type params) {
-  OStringStream* ss_ptr = &shader_helper.AdditionalImplementation();
+  [[maybe_unused]] auto& ss = shader_helper.AdditionalImplementation();
 
   // Extract parameters
   auto& __param_dim_value_zero = params.param_dim_value_zero;
@@ -18,51 +18,51 @@ Status ApplyTemplate<"tensor/pad.wgsl.template">(ShaderHelper& shader_helper, Te
   auto& __var_output = *params.var_output;
 
 MainFunctionStart();
-(*ss_ptr) << "\n  ";
-(*ss_ptr) << shader_helper.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size");
-(*ss_ptr) << ";\n\n  let constant_value =\n";
+ss << "\n  ";
+ss << shader_helper.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size");
+ss << ";\n\n  let constant_value =\n";
 if (__param_is_float16) {
-(*ss_ptr) << "      bitcast<vec2<f16>>(uniforms.constant_value)[0];\n";
+ss << "      bitcast<vec2<f16>>(uniforms.constant_value)[0];\n";
 } else {
-(*ss_ptr) << "      bitcast<output_value_t>(uniforms.constant_value);\n";
+ss << "      bitcast<output_value_t>(uniforms.constant_value);\n";
 }
 if (__param_dim_value_zero) {
-(*ss_ptr) << "  output[global_idx] = constant_value;\n";
+ss << "  output[global_idx] = constant_value;\n";
 } else {
-(*ss_ptr) << "  let output_indices = ";
-(*ss_ptr) << __var_output.OffsetToIndices("global_idx");
-(*ss_ptr) << ";\n  var input_index = u32(0);\n  var use_pad_value = false;\n  var in_coord = i32(0);\n\n  for (var dim = 0; dim < ";
-(*ss_ptr) << __var_output.Rank();
-(*ss_ptr) << " && !use_pad_value; dim++) {\n    let output_index = i32(";
-(*ss_ptr) << GetElementAt("output_indices", "dim", __var_output.Rank());
-(*ss_ptr) << ");\n    let lower_pads = ";
-(*ss_ptr) << GetElementAt("uniforms.lower_pads", "dim", __var_output.Rank());
-(*ss_ptr) << ";\n    let data_shape = i32(";
-(*ss_ptr) << GetElementAt("uniforms.data_shape", "dim", __var_output.Rank());
-(*ss_ptr) << ");\n";
+ss << "  let output_indices = ";
+ss << __var_output.OffsetToIndices("global_idx");
+ss << ";\n  var input_index = u32(0);\n  var use_pad_value = false;\n  var in_coord = i32(0);\n\n  for (var dim = 0; dim < ";
+ss << __var_output.Rank();
+ss << " && !use_pad_value; dim++) {\n    let output_index = i32(";
+ss << GetElementAt("output_indices", "dim", __var_output.Rank());
+ss << ");\n    let lower_pads = ";
+ss << GetElementAt("uniforms.lower_pads", "dim", __var_output.Rank());
+ss << ";\n    let data_shape = i32(";
+ss << GetElementAt("uniforms.data_shape", "dim", __var_output.Rank());
+ss << ");\n";
 if (__param_pad_mode == 0) {
-(*ss_ptr) << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n        use_pad_value = true;\n";
+ss << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n        use_pad_value = true;\n";
 } else if (__param_pad_mode == 2) {
-(*ss_ptr) << "    if (output_index < lower_pads) {\n      in_coord = 0;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = data_shape - 1;\n";
+ss << "    if (output_index < lower_pads) {\n      in_coord = 0;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = data_shape - 1;\n";
 } else if (__param_pad_mode == 1) {
-(*ss_ptr) << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n      in_coord = output_index - lower_pads;\n      if (in_coord < 0) {\n        in_coord = -in_coord;\n      }\n      let _2n_1 = 2 * (data_shape - 1);\n      in_coord = in_coord % _2n_1;\n      if (in_coord >= data_shape) {\n        in_coord = _2n_1 - in_coord;\n      }\n";
+ss << "    if (output_index < lower_pads || output_index >= data_shape + lower_pads) {\n      in_coord = output_index - lower_pads;\n      if (in_coord < 0) {\n        in_coord = -in_coord;\n      }\n      let _2n_1 = 2 * (data_shape - 1);\n      in_coord = in_coord % _2n_1;\n      if (in_coord >= data_shape) {\n        in_coord = _2n_1 - in_coord;\n      }\n";
 } else {
-(*ss_ptr) << "    if (output_index < lower_pads) {\n      in_coord = data_shape + output_index - lower_pads;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = output_index - data_shape - lower_pads;\n";
+ss << "    if (output_index < lower_pads) {\n      in_coord = data_shape + output_index - lower_pads;\n    } else if (output_index >= data_shape + lower_pads) {\n      in_coord = output_index - data_shape - lower_pads;\n";
 }
-(*ss_ptr) << "    } else {\n        in_coord = output_index - lower_pads;\n    }\n\n    input_index += select(u32(in_coord)\n";
+ss << "    } else {\n        in_coord = output_index - lower_pads;\n    }\n\n    input_index += select(u32(in_coord)\n";
 if (__var_output.Rank() > 1) {
-(*ss_ptr) << "        * ";
-(*ss_ptr) << GetElementAt("uniforms.data_stride", "dim", __var_output.Rank() - 1);
-(*ss_ptr) << "\n";
+ss << "        * ";
+ss << GetElementAt("uniforms.data_stride", "dim", __var_output.Rank() - 1);
+ss << "\n";
 }
-(*ss_ptr) << "        , u32(in_coord), dim == ";
-(*ss_ptr) << __var_output.Rank();
-(*ss_ptr) << " - 1);\n  }\n\n  ";
-(*ss_ptr) << __var_output.SetByOffset("global_idx", "select(data[input_index], constant_value, use_pad_value)");
-(*ss_ptr) << ";\n";
+ss << "        , u32(in_coord), dim == ";
+ss << __var_output.Rank();
+ss << " - 1);\n  }\n\n  ";
+ss << __var_output.SetByOffset("global_idx", "select(data[input_index], constant_value, use_pad_value)");
+ss << ";\n";
 }
 MainFunctionEnd();
-(*ss_ptr) << "\n";
+ss << "\n";
 
 
   return Status::OK();

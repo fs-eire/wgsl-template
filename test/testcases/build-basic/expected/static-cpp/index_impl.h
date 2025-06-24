@@ -9,10 +9,10 @@
 
 #pragma push_macro("MainFunctionStart")
 #undef MainFunctionStart
-#define MainFunctionStart ss_ptr = &shader_helper.MainFunctionBody
+#define MainFunctionStart() { [[maybe_unused]] auto& ss = shader_helper.MainFunctionBody();
 #pragma push_macro("MainFunctionEnd")
 #undef MainFunctionEnd
-#define MainFunctionEnd ss_ptr = &shader_helper.AdditionalImplementation
+#define MainFunctionEnd() }
 
 // Helper templates
 

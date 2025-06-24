@@ -7,9 +7,9 @@
 
 template <>
 Status ApplyTemplate<"shader/triangle.wgsl.template">(ShaderHelper& shader_helper, TemplateParameter<"shader/triangle.wgsl.template">::type ) {
-  OStringStream* ss_ptr = &shader_helper.AdditionalImplementation();
+  [[maybe_unused]] auto& ss = shader_helper.AdditionalImplementation();
 
-(*ss_ptr) << __str_0;
+ss << __str_0;
 
 
   return Status::OK();
