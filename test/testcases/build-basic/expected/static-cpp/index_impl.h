@@ -35,7 +35,7 @@ std::string pass_as_string(T&& v) {
 
 // Include template implementations
 
-#include "generated/shader/triangle.h"  // f5cec46558b917d8a4ec739f0ab02e71a31046d9c0d14028daa4aa0557a72da6
+#include "generated/shader/triangle.h"  // d61822d677fc73d87adbe0b7b8e81d556ca515fef270bbe01dcdcb10596c350b
 
 #pragma pop_macro("MainFunctionStart")
 #pragma pop_macro("MainFunctionEnd")
