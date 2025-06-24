@@ -62,6 +62,7 @@ jobs:
 
           # Commit the version bump
           git add package.json
+          git add package-lock.json
           git commit -m "chore: bump version to $NEW_VERSION [skip publish]"
 
           # Push the changes
