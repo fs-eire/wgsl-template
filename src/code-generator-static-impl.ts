@@ -69,9 +69,9 @@ export class StaticCodeGenerator implements CodeGenerator, SourceBuilder {
           case "raw":
             return segment.content;
           case "code":
-            return `(*ss_ptr) << ${this.#renderString(segment.content)};\n`;
+            return `ss << ${this.#renderString(segment.content)};\n`;
           case "expression":
-            return `(*ss_ptr) << ${segment.content};\n`;
+            return `ss << ${segment.content};\n`;
         }
       })
       .join("");
@@ -205,10 +205,10 @@ export class StaticCodeGenerator implements CodeGenerator, SourceBuilder {
 
 #pragma push_macro("MainFunctionStart")
 #undef MainFunctionStart
-#define MainFunctionStart ss_ptr = &shader_helper.MainFunctionBody
+#define MainFunctionStart() { [[maybe_unused]] auto& ss = shader_helper.MainFunctionBody();
 #pragma push_macro("MainFunctionEnd")
 #undef MainFunctionEnd
-#define MainFunctionEnd ss_ptr = &shader_helper.AdditionalImplementation
+#define MainFunctionEnd() }
 
 // Helper templates
 
@@ -271,7 +271,7 @@ std::string pass_as_string(T&& v) {
         filePath
       )}>::type ${paramsIsNotUsed ? "" : "params"}) {`
     );
-    implContent.push("  OStringStream* ss_ptr = &shader_helper.AdditionalImplementation();");
+    implContent.push("  [[maybe_unused]] auto& ss = shader_helper.AdditionalImplementation();");
     implContent.push("");
 
     // Add parameter assignments for easier access
