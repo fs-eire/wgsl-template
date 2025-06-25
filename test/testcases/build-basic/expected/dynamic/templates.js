@@ -2,7 +2,7 @@
 
 "use strict";
 
-var $templates = {
+globalThis.$templates = {
   "shader/triangle.wgsl.template": function(param, variable, shader_helper) {
     var $emitAdditional = function (code) {
       shader_helper.appendAdditionalImplementation(code);
