@@ -2,7 +2,7 @@
 
 "use strict";
 
-var $templates = {
+globalThis.$templates = {
   "tensor/pad.wgsl.template": function(param, variable, shader_helper) {
     var $emitAdditional = function (code) {
       shader_helper.appendAdditionalImplementation(code);

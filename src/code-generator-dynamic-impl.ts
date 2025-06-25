@@ -109,7 +109,7 @@ export class DynamicCodeGenerator implements CodeGenerator, SourceBuilder {
 
 "use strict";
 
-var $templates = {
+globalThis.$templates = {
 `;
     for (const [name, template] of repo.templates) {
       contents += `  ${JSON.stringify(name)}: function(param, variable, shader_helper) {
