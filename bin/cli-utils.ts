@@ -289,9 +289,9 @@ Usage:
   npx wgsl-gen [options]
 
 Options:
-  --input, -i <dir>[:@<alias>]   Source directory containing WGSL template files (required)
+  --input, -i <dir>[|@<alias>]   Source directory containing WGSL template files (required)
                                  Can be specified multiple times for multiple directories
-                                 Optional alias: "dir:@alias" to prefix template names
+                                 Optional alias: "dir|@alias" to prefix template names
   --output, -o <dir>             Output directory for generated files (required)
   --generator <n>                Code generator to use (default: "static-cpp-literal")
                                  Available: "dynamic", "static-cpp", "static-cpp-literal"
@@ -311,8 +311,9 @@ Examples:
   npx wgsl-gen -i ./src -o ./build --include-prefix "myproject/"
   npx wgsl-gen -i ./templates -o ./generated --clean --verbose
   npx wgsl-gen -i ./templates -o ./generated --watch --debounce 500
-  npx wgsl-gen -i ./common -i ./effects:@fx --output ./generated
-  npx wgsl-gen -i ./base -i ./shaders:@shaders -i ./utils:@utils -o ./cpp
+  npx wgsl-gen -i ./common -i ./effects|@fx --output ./generated
+  npx wgsl-gen -i ./base -i ./shaders|@shaders -i ./utils|@utils -o ./cpp
+  npx wgsl-gen -i "C:\\Projects\\templates" -i "D:\\shared\\effects|@fx" -o ./build
 `);
 }
 
@@ -358,28 +359,33 @@ export function validateOptions(options: CliOptions): string[] {
 
 /**
  * Parse input directories with optional aliases from CLI arguments
- * Format: "dir1" or "dir1:@alias1" or ["dir1", "dir2:@alias2"]
+ * Format: "dir1" or "dir1|@alias1" or ["dir1", "dir2|@alias2"]
  */
 export function parseInputDirectories(input: string | string[]): ({ path: string; alias?: string } | string)[] {
   const inputs = Array.isArray(input) ? input : [input];
 
   return inputs.map((inputStr) => {
-    const parts = inputStr.split(":");
-    if (parts.length === 1) {
+    const pipeIndex = inputStr.indexOf("|");
+    if (pipeIndex === -1) {
       // No alias specified
-      return parts[0];
-    } else if (parts.length === 2) {
+      return inputStr;
+    } else {
       // Alias specified
-      const [dirPath, alias] = parts;
+      const dirPath = inputStr.substring(0, pipeIndex);
+      const alias = inputStr.substring(pipeIndex + 1);
+
       if (!alias.startsWith("@")) {
-        throw new Error(`Invalid alias format: ${alias}. Aliases must start with '@'. Example: "dir:@alias"`);
+        throw new Error(`Invalid alias format: ${alias}. Aliases must start with '@'. Example: "dir|@alias"`);
       }
+
+      if (dirPath.length === 0) {
+        throw new Error(`Invalid input format: ${inputStr}. Directory path cannot be empty. Example: "dir|@alias"`);
+      }
+
       return {
         path: dirPath,
         alias: alias,
       };
-    } else {
-      throw new Error(`Invalid input format: ${inputStr}. Expected "dir" or "dir:@alias"`);
     }
   });
 }
