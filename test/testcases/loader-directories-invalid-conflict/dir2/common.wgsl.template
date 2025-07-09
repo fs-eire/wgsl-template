@@ -1,0 +1,4 @@
+// Common template from dir2 - this will conflict!
+struct CommonStruct2 {
+    value: i32,
+}

@@ -180,6 +180,11 @@ export interface LoadFromDirectoryOptions {
 
 export interface Loader {
   loadFromDirectory(directory: string, options?: LoadFromDirectoryOptions): Promise<TemplateRepository<TemplatePass0>>;
+
+  loadFromDirectories(
+    directories: ({ path: string; alias?: string } | string)[],
+    options?: LoadFromDirectoryOptions
+  ): Promise<TemplateRepository<TemplatePass0>>;
 }
 
 // ============================================================================

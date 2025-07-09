@@ -1,0 +1,16 @@
+// Advanced matrix operations
+struct Matrix4x4 {
+    data: array<f32, 16>,
+}
+
+fn multiply_matrices(a: Matrix4x4, b: Matrix4x4) -> Matrix4x4 {
+    var result: Matrix4x4;
+    // Matrix multiplication logic here
+    return result;
+}
+
+fn transpose_matrix(m: Matrix4x4) -> Matrix4x4 {
+    var result: Matrix4x4;
+    // Transpose logic here
+    return result;
+}

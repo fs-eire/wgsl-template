@@ -1,0 +1,21 @@
+// Color utilities
+struct Color {
+    r: f32,
+    g: f32,
+    b: f32,
+    a: f32,
+}
+
+fn rgb_to_hsv(color: Color) -> vec3<f32> {
+    // RGB to HSV conversion
+    return vec3<f32>(0.0);
+}
+
+fn blend_colors(a: Color, b: Color, factor: f32) -> Color {
+    return Color(
+        mix(a.r, b.r, factor),
+        mix(a.g, b.g, factor),
+        mix(a.b, b.b, factor),
+        mix(a.a, b.a, factor)
+    );
+}

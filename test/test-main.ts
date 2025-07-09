@@ -6,7 +6,7 @@ import minimist from "minimist";
 import type { TestCase, TestConfig, TestResult } from "./test-types.js";
 
 // Import test runners
-import { runLoaderTest } from "./test-runner-loader.js";
+import { runLoaderTest, runLoaderDirectoriesTest } from "./test-runner-loader.js";
 import { runParserTest } from "./test-runner-parser.js";
 import { runBuildTest } from "./test-runner-build.js";
 import { runGeneratorTest } from "./test-runner-generator.js";
@@ -70,6 +70,8 @@ async function runTestCase(testCase: TestCase, debug?: boolean): Promise<TestRes
     switch (testCase.config.type) {
       case "loader":
         return await runLoaderTest(testCase, debug);
+      case "loader-directories":
+        return await runLoaderDirectoriesTest(testCase, debug);
       case "parser":
         return await runParserTest(testCase, debug);
       case "build":

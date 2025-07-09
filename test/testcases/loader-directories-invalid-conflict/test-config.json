@@ -1,0 +1,6 @@
+{
+  "type": "loader-directories",
+  "description": "Test that loading from multiple directories throws error on filename conflicts",
+  "expectsError": "Template name conflict",
+  "directories": ["dir1", "dir2"]
+}

@@ -2,7 +2,15 @@
 
 import minimist from "minimist";
 import { build } from "../src/index.js";
-import { displayError, displayFileTree, showHelp, showVersion, validateOptions, type CliOptions } from "./cli-utils.js";
+import {
+  displayError,
+  displayFileTree,
+  showHelp,
+  showVersion,
+  validateOptions,
+  parseInputDirectories,
+  type CliOptions,
+} from "./cli-utils.js";
 import { TemplateWatcher } from "./watcher.js";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -20,14 +28,16 @@ async function main() {
       w: "watch",
       v: "verbose",
     },
-    string: ["input", "output", "generator", "ext", "include-prefix", "debounce"],
+    string: ["output", "generator", "ext", "include-prefix", "debounce"],
     boolean: ["help", "version", "clean", "preserve-code-ref", "watch", "verbose"],
+    // Allow multiple values for input
+    default: { input: [] },
   });
 
   const options: CliOptions = {
     help: argv.help,
     version: argv.version,
-    input: argv.input,
+    input: Array.isArray(argv.input) ? argv.input : argv.input ? [argv.input] : undefined,
     output: argv.output,
     generator: argv.generator,
     ext: argv.ext,
@@ -65,16 +75,33 @@ async function main() {
   const debounce = options.debounce || 300;
 
   try {
-    // Check if source directory exists
-    const srcPath = path.resolve(options.input!);
+    // Parse input directories with aliases
+    const sourceDirs = parseInputDirectories(options.input!);
     const outPath = path.resolve(options.output!);
 
-    try {
-      await fs.access(srcPath);
-    } catch {
-      console.error(`Error: Source directory "${srcPath}" does not exist`);
-      process.exit(1);
+    // Check if all source directories exist
+    for (const dir of sourceDirs) {
+      const dirPath = typeof dir === "string" ? dir : dir.path;
+      const resolvedPath = path.resolve(dirPath);
+      try {
+        await fs.access(resolvedPath);
+      } catch {
+        console.error(`Error: Source directory "${resolvedPath}" does not exist`);
+        process.exit(1);
+      }
     }
+
+    // Convert to absolute paths for the build function
+    const absoluteSourceDirs = sourceDirs.map((dir) => {
+      if (typeof dir === "string") {
+        return path.resolve(dir);
+      } else {
+        return {
+          path: path.resolve(dir.path),
+          alias: dir.alias,
+        };
+      }
+    });
 
     // Check if output path is an existing file (not allowed regardless of clean flag)
     try {
@@ -91,7 +118,7 @@ async function main() {
     // Handle watch mode
     if (options.watch) {
       const watcher = new TemplateWatcher({
-        sourceDir: srcPath,
+        sourceDirs: absoluteSourceDirs,
         outDir: outPath,
         templateExt,
         generator,
@@ -132,7 +159,9 @@ async function main() {
     }
 
     console.log(`Building WGSL templates...`);
-    console.log(`  Source: ${srcPath}`);
+    console.log(
+      `  Sources: ${absoluteSourceDirs.map((d) => (typeof d === "string" ? d : `${d.path} (${d.alias})`)).join(", ")}`
+    );
     console.log(`  Output: ${outPath}`);
     console.log(`  Generator: ${generator}`);
     console.log(`  Template extension: ${templateExt}`);
@@ -151,7 +180,7 @@ async function main() {
 
     // Run the build
     const result = await build({
-      sourceDir: srcPath,
+      sourceDirs: absoluteSourceDirs,
       outDir: outPath,
       templateExt,
       generator,

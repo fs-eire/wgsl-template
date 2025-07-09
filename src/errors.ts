@@ -68,7 +68,13 @@ export class WgslTemplateLoadError extends WgslTemplateError {
   /**
    * The type of load operation that failed.
    */
-  readonly operation: "read-file" | "scan-directory" | "resolve-path" | "file-not-found" | "permission-denied";
+  readonly operation:
+    | "read-file"
+    | "scan-directory"
+    | "resolve-path"
+    | "file-not-found"
+    | "permission-denied"
+    | "template-conflict";
 
   constructor(
     message: string,
@@ -180,7 +186,8 @@ export class WgslTemplateBuildError extends WgslTemplateError {
     | "permission-denied"
     | "disk-full"
     | "path-security-violation"
-    | "output-validation-failed";
+    | "output-validation-failed"
+    | "invalid-options";
 
   /**
    * The target output path that caused the error, if applicable.

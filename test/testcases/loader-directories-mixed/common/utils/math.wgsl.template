@@ -1,0 +1,12 @@
+// Math utilities
+fn clamp_value(value: f32, min_val: f32, max_val: f32) -> f32 {
+    return max(min_val, min(value, max_val));
+}
+
+fn normalize_vec3(v: vec3<f32>) -> vec3<f32> {
+    let len = length(v);
+    if (len > 0.0) {
+        return v / len;
+    }
+    return vec3<f32>(0.0);
+}

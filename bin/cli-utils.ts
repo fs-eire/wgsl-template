@@ -15,7 +15,7 @@ import type { TemplateRepository, TemplatePass0, TemplatePass1, TemplatePass2 } 
 export interface CliOptions {
   help?: boolean;
   version?: boolean;
-  input?: string;
+  input?: string | string[]; // Now supports multiple inputs
   output?: string;
   generator?: string;
   ext?: string;
@@ -289,7 +289,9 @@ Usage:
   npx wgsl-gen [options]
 
 Options:
-  --input, -i <dir>              Source directory containing WGSL template files (required)
+  --input, -i <dir>[:@<alias>]   Source directory containing WGSL template files (required)
+                                 Can be specified multiple times for multiple directories
+                                 Optional alias: "dir:@alias" to prefix template names
   --output, -o <dir>             Output directory for generated files (required)
   --generator <n>                Code generator to use (default: "static-cpp-literal")
                                  Available: "dynamic", "static-cpp", "static-cpp-literal"
@@ -309,6 +311,8 @@ Examples:
   npx wgsl-gen -i ./src -o ./build --include-prefix "myproject/"
   npx wgsl-gen -i ./templates -o ./generated --clean --verbose
   npx wgsl-gen -i ./templates -o ./generated --watch --debounce 500
+  npx wgsl-gen -i ./common -i ./effects:@fx --output ./generated
+  npx wgsl-gen -i ./base -i ./shaders:@shaders -i ./utils:@utils -o ./cpp
 `);
 }
 
@@ -350,4 +354,32 @@ export function validateOptions(options: CliOptions): string[] {
   }
 
   return errors;
+}
+
+/**
+ * Parse input directories with optional aliases from CLI arguments
+ * Format: "dir1" or "dir1:@alias1" or ["dir1", "dir2:@alias2"]
+ */
+export function parseInputDirectories(input: string | string[]): ({ path: string; alias?: string } | string)[] {
+  const inputs = Array.isArray(input) ? input : [input];
+
+  return inputs.map((inputStr) => {
+    const parts = inputStr.split(":");
+    if (parts.length === 1) {
+      // No alias specified
+      return parts[0];
+    } else if (parts.length === 2) {
+      // Alias specified
+      const [dirPath, alias] = parts;
+      if (!alias.startsWith("@")) {
+        throw new Error(`Invalid alias format: ${alias}. Aliases must start with '@'. Example: "dir:@alias"`);
+      }
+      return {
+        path: dirPath,
+        alias: alias,
+      };
+    } else {
+      throw new Error(`Invalid input format: ${inputStr}. Expected "dir" or "dir:@alias"`);
+    }
+  });
 }

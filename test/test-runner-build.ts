@@ -55,13 +55,34 @@ export async function runBuildTest(testCase: TestCase, debug?: boolean): Promise
         console.log(`  Template extension: ${config.templateExt || ".wgsl.template"}`);
       }
 
+      // Use sourceDirs if specified, otherwise default to src directory
+      let sourceDirs: ({ path: string; alias?: string } | string)[];
+      if (config.sourceDirs && config.sourceDirs.length > 0) {
+        // Map relative paths in sourceDirs to absolute paths from the src directory
+        sourceDirs = config.sourceDirs.map((dir) => {
+          if (typeof dir === "string") {
+            return path.resolve(srcDir, dir);
+          } else {
+            return {
+              path: path.resolve(srcDir, dir.path),
+              alias: dir.alias,
+            };
+          }
+        });
+      } else {
+        // Default to using the src directory as a single source directory
+        sourceDirs = [srcDir];
+      }
+
       // Run the build function for this generator
-      const buildResult = await build({
-        sourceDir: srcDir,
+      const buildOptions = {
         templateExt: config.templateExt || ".wgsl.template",
         outDir: genDir,
         generator: generatorName,
-      });
+        sourceDirs: sourceDirs,
+      };
+
+      const buildResult = await build(buildOptions);
 
       // Show debug information if debug mode is enabled
       if (debug) {
@@ -185,10 +206,7 @@ async function compareDirectories(
   // Check for unexpected generated files
   for (const genFile of genFiles) {
     if (!expectedFiles.includes(genFile)) {
-      if (debug) {
-        console.warn(`${testName}: Unexpected generated file: ${genFile}`);
-      }
-      // In non-debug mode, silently ignore unexpected files unless they are errors
+      throw new Error(`${testName}: Unexpected generated file: ${genFile}`);
     }
   }
 }
