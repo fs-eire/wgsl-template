@@ -34,20 +34,24 @@ export class TemplateWatcher {
   }
 
   /**
-   * Start watching the source directory for changes
+   * Start watching the source directories for changes
    */
   async start(): Promise<void> {
-    const srcPath = path.resolve(this.options.sourceDir);
-
-    // Verify source directory exists
-    try {
-      await fs.access(srcPath);
-    } catch {
-      throw new Error(`Source directory "${srcPath}" does not exist`);
+    // Verify all source directories exist and get their absolute paths
+    const absoluteSourceDirs: string[] = [];
+    for (const dir of this.options.sourceDirs) {
+      const dirPath = typeof dir === "string" ? dir : dir.path;
+      const resolvedPath = path.resolve(dirPath);
+      try {
+        await fs.access(resolvedPath);
+        absoluteSourceDirs.push(resolvedPath);
+      } catch {
+        throw new Error(`Source directory "${resolvedPath}" does not exist`);
+      }
     }
 
     console.log(`🔍 Starting watch mode...`);
-    console.log(`  Source: ${srcPath}`);
+    console.log(`  Sources: ${absoluteSourceDirs.join(", ")}`);
     console.log(`  Output: ${path.resolve(this.options.outDir)}`);
     console.log(`  Template extension: ${this.options.templateExt}`);
     console.log(`  Debounce delay: ${this.options.debounce}ms`);
@@ -56,8 +60,10 @@ export class TemplateWatcher {
     console.log(`\n⚡ Running initial build...`);
     await this.runBuild();
 
-    // Start watching
-    await this.setupWatchers(srcPath);
+    // Start watching all source directories
+    for (const srcPath of absoluteSourceDirs) {
+      await this.setupWatchers(srcPath);
+    }
 
     console.log(`\n👀 Watching for changes... (Press Ctrl+C to stop)`);
   }
@@ -113,7 +119,19 @@ export class TemplateWatcher {
       return;
     }
 
-    const relativePath = path.relative(this.options.sourceDir, filePath);
+    // Find which source directory this file belongs to
+    let relativePath = filePath;
+    for (const dir of this.options.sourceDirs) {
+      const dirPath = typeof dir === "string" ? dir : dir.path;
+      const resolvedDirPath = path.resolve(dirPath);
+      if (filePath.startsWith(resolvedDirPath)) {
+        relativePath = path.relative(resolvedDirPath, filePath);
+        if (typeof dir !== "string" && dir.alias) {
+          relativePath = `${dir.alias}/${relativePath}`;
+        }
+        break;
+      }
+    }
 
     if (this.options.verbose) {
       const timestamp = new Date().toLocaleTimeString();
@@ -140,7 +158,7 @@ export class TemplateWatcher {
       const startTime = Date.now();
 
       const result = await build({
-        sourceDir: this.options.sourceDir,
+        sourceDirs: this.options.sourceDirs,
         outDir: this.options.outDir,
         templateExt: this.options.templateExt,
         generator: this.options.generator,

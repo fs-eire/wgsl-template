@@ -1,0 +1,4 @@
+// Fragment shader  
+fn fragment_main() {
+    // Fragment processing
+}

@@ -1,0 +1,28 @@
+{
+  "type": "loader-directories",
+  "description": "Test loading template files from multiple directories with aliases",
+  "directories": [
+    {
+      "path": "templates",
+      "alias": "@templates"
+    },
+    {
+      "path": "shaders",
+      "alias": "@shaders"
+    }
+  ],
+  "expectedFiles": [
+    {
+      "path": "@templates/base.wgsl.template",
+      "content": ["// Base template", "struct BaseStruct {", "    value: f32,", "}", ""]
+    },
+    {
+      "path": "@shaders/vertex.wgsl.template",
+      "content": ["// Vertex shader", "fn vertex_main() {", "    // Vertex processing", "}", ""]
+    },
+    {
+      "path": "@shaders/fragment.wgsl.template",
+      "content": ["// Fragment shader  ", "fn fragment_main() {", "    // Fragment processing", "}", ""]
+    }
+  ]
+}

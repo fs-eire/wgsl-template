@@ -1,0 +1,4 @@
+// Common template from dir1
+struct CommonStruct1 {
+    value: f32,
+}

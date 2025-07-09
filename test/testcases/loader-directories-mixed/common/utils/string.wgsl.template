@@ -1,0 +1,10 @@
+// String utilities
+fn format_float(value: f32, precision: i32) -> string {
+    // Format float with given precision
+    return "";
+}
+
+fn join_strings(strings: array<string>, separator: string) -> string {
+    // Join array of strings with separator
+    return "";
+}

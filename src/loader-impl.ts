@@ -5,18 +5,20 @@ import type { Loader, LoadFromDirectoryOptions, TemplatePass0, TemplateRepositor
 import { WgslTemplateLoadError } from "./errors.js";
 
 /**
- * Recursively scans a directory and its subdirectories for template files.
+ * Recursively scans a directory and its subdirectories for template files with alias support.
  *
  * @param directory The directory to scan
  * @param basePath The base directory path for calculating relative paths
  * @param ext The file extension to look for
  * @param templates The map to store loaded templates
+ * @param alias Optional alias to prepend to template names
  */
-async function loadTemplatesRecursively(
+async function loadTemplatesRecursivelyWithAlias(
   directory: string,
   basePath: string,
   ext: string,
-  templates: Map<string, TemplatePass0>
+  templates: Map<string, TemplatePass0>,
+  alias?: string
 ): Promise<void> {
   try {
     const entries = await readdir(directory);
@@ -36,10 +38,10 @@ async function loadTemplatesRecursively(
 
       if (entryStat.isDirectory()) {
         // Recursively process subdirectories
-        await loadTemplatesRecursively(fullPath, basePath, ext, templates);
+        await loadTemplatesRecursivelyWithAlias(fullPath, basePath, ext, templates, alias);
       } else if (entryStat.isFile() && entry.endsWith(ext)) {
-        // Load template file
-        await loadTemplateFile(fullPath, basePath, templates);
+        // Load template file with alias
+        await loadTemplateFileWithAlias(fullPath, basePath, templates, alias);
       }
       // Skip symbolic links and other special file types for security
     }
@@ -51,17 +53,20 @@ async function loadTemplatesRecursively(
     );
   }
 }
+
 /**
- * Loads a single template file and adds it to the templates map.
+ * Loads a single template file with alias support and adds it to the templates map.
  *
  * @param filePath The path to the template file
  * @param basePath The base directory path for calculating relative paths
  * @param templates The map to store the loaded template
+ * @param alias Optional alias to prepend to template name
  */
-async function loadTemplateFile(
+async function loadTemplateFileWithAlias(
   filePath: string,
   basePath: string,
-  templates: Map<string, TemplatePass0>
+  templates: Map<string, TemplatePass0>,
+  alias?: string
 ): Promise<void> {
   try {
     const resolvedFilePath = path.resolve(filePath);
@@ -81,7 +86,19 @@ async function loadTemplateFile(
     // Calculate relative path from base directory
     const relativePath = path.relative(basePath, filePath);
     // always use UNIX-style paths for consistency
-    const templateName = relativePath.replace(/\\/g, "/");
+    let templateName = relativePath.replace(/\\/g, "/");
+
+    // Prepend alias if provided
+    if (alias) {
+      templateName = `${alias}/${templateName}`;
+    }
+
+    // Check for filename conflicts
+    if (templates.has(templateName)) {
+      throw new WgslTemplateLoadError(`Template name conflict: ${templateName} already exists`, "template-conflict", {
+        filePath,
+      });
+    }
 
     const template: TemplatePass0 = {
       filePath: resolvedFilePath,
@@ -90,6 +107,9 @@ async function loadTemplateFile(
 
     templates.set(templateName, template);
   } catch (error) {
+    if (error instanceof WgslTemplateLoadError) {
+      throw error;
+    }
     throw new WgslTemplateLoadError(
       `Error loading template file ${filePath}: ${(error as Error).message}`,
       "read-file",
@@ -115,26 +135,54 @@ export const loader: Loader = {
     directory: string,
     options?: LoadFromDirectoryOptions
   ): Promise<TemplateRepository<TemplatePass0>> {
+    // Use loadFromDirectories as it handles the same functionality
+    return this.loadFromDirectories([directory], options);
+  },
+
+  /**
+   * Loads template files from multiple directories using Node.js filesystem APIs.
+   * Supports optional aliases to prevent filename conflicts.
+   *
+   * @param directories Array of directory paths or objects with path and alias
+   * @param options Optional configuration for loading templates
+   * @returns A promise that resolves to a TemplateRepository containing all loaded templates
+   */
+  async loadFromDirectories(
+    directories: ({ path: string; alias?: string } | string)[],
+    options?: LoadFromDirectoryOptions
+  ): Promise<TemplateRepository<TemplatePass0>> {
     const ext = options?.ext ?? ".wgsl.template";
     const templates = new Map<string, TemplatePass0>();
+    const resolvedBasePaths: string[] = [];
 
-    // Ensure the directory exists
-    try {
-      const dirStat = await stat(directory);
-      if (!dirStat.isDirectory()) {
-        throw new WgslTemplateLoadError(`Path ${directory} is not a directory`, "scan-directory");
+    for (const dir of directories) {
+      const dirPath = typeof dir === "string" ? dir : dir.path;
+      const alias = typeof dir === "string" ? undefined : dir.alias;
+
+      // Ensure the directory exists
+      try {
+        const dirStat = await stat(dirPath);
+        if (!dirStat.isDirectory()) {
+          throw new WgslTemplateLoadError(`Path ${dirPath} is not a directory`, "scan-directory");
+        }
+      } catch (error) {
+        throw new WgslTemplateLoadError(
+          `Cannot access directory ${dirPath}: ${(error as Error).message}`,
+          "scan-directory",
+          { cause: error as Error }
+        );
       }
-    } catch (error) {
-      throw new WgslTemplateLoadError(
-        `Cannot access directory ${directory}: ${(error as Error).message}`,
-        "scan-directory",
-        { cause: error as Error }
-      );
-    } // Recursively load template files
-    await loadTemplatesRecursively(directory, directory, ext, templates);
+
+      // Recursively load template files with alias support
+      await loadTemplatesRecursivelyWithAlias(dirPath, dirPath, ext, templates, alias);
+      resolvedBasePaths.push(path.resolve(dirPath));
+    }
+
+    // Use the first directory as the base path for simplicity
+    const basePath = resolvedBasePaths.length === 1 ? resolvedBasePaths[0] : resolvedBasePaths[0]; // For multiple directories, use the first one as base
 
     return {
-      basePath: path.resolve(directory),
+      basePath,
       templates: templates as ReadonlyMap<string, TemplatePass0>,
     };
   },

@@ -35,6 +35,7 @@ export interface ParserTestConfig extends BaseTestConfig {
 export interface BuildTestConfig extends BaseTestConfig {
   type: "build";
   templateExt?: string;
+  sourceDirs?: ({ path: string; alias?: string } | string)[];
   generators: Record<
     string,
     {
@@ -63,8 +64,27 @@ export interface GeneratorTestConfig extends BaseTestConfig {
   >;
 }
 
+// LoaderDirectories test configuration
+export interface LoaderDirectoriesTestConfig extends BaseTestConfig {
+  type: "loader-directories";
+  expectsError?: boolean | string; // true if test should throw an error, or expected error message pattern
+  loaderOptions?: {
+    ext?: string;
+  };
+  directories: ({ path: string; alias?: string } | string)[];
+  expectedFiles?: {
+    path: string; // This should be the full template name including alias if present
+    content: string[];
+  }[];
+}
+
 // Union type for all test configurations
-export type TestConfig = LoaderTestConfig | ParserTestConfig | BuildTestConfig | GeneratorTestConfig;
+export type TestConfig =
+  | LoaderTestConfig
+  | LoaderDirectoriesTestConfig
+  | ParserTestConfig
+  | BuildTestConfig
+  | GeneratorTestConfig;
 
 export interface TestResult {
   name: string;

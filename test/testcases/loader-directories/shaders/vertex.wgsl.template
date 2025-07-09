@@ -1,0 +1,4 @@
+// Vertex shader
+fn vertex_main() {
+    // Vertex processing
+}

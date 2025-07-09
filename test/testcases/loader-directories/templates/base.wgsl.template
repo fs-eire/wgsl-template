@@ -1,0 +1,4 @@
+// Base template
+struct BaseStruct {
+    value: f32,
+}

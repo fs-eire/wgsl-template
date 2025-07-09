@@ -1,0 +1,132 @@
+{
+  "type": "loader-directories",
+  "description": "Test loading template files from mixed directories - some with aliases, some without, including subfolders",
+  "directories": [
+    "common",
+    {
+      "path": "library",
+      "alias": "@lib"
+    }
+  ],
+  "expectedFiles": [
+    {
+      "path": "constants.wgsl.template",
+      "content": ["// Common constants", "const PI: f32 = 3.14159265359;", "const TWO_PI: f32 = 6.28318530718;", ""]
+    },
+    {
+      "path": "utils/math.wgsl.template",
+      "content": [
+        "// Math utilities",
+        "fn clamp_value(value: f32, min_val: f32, max_val: f32) -> f32 {",
+        "    return max(min_val, min(value, max_val));",
+        "}",
+        "",
+        "fn normalize_vec3(v: vec3<f32>) -> vec3<f32> {",
+        "    let len = length(v);",
+        "    if (len > 0.0) {",
+        "        return v / len;",
+        "    }",
+        "    return vec3<f32>(0.0);",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "utils/string.wgsl.template",
+      "content": [
+        "// String utilities",
+        "fn format_float(value: f32, precision: i32) -> string {",
+        "    // Format float with given precision",
+        "    return \"\";",
+        "}",
+        "",
+        "fn join_strings(strings: array<string>, separator: string) -> string {",
+        "    // Join array of strings with separator",
+        "    return \"\";",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "@lib/math/matrix.wgsl.template",
+      "content": [
+        "// Advanced matrix operations",
+        "struct Matrix4x4 {",
+        "    data: array<f32, 16>,",
+        "}",
+        "",
+        "fn multiply_matrices(a: Matrix4x4, b: Matrix4x4) -> Matrix4x4 {",
+        "    var result: Matrix4x4;",
+        "    // Matrix multiplication logic here",
+        "    return result;",
+        "}",
+        "",
+        "fn transpose_matrix(m: Matrix4x4) -> Matrix4x4 {",
+        "    var result: Matrix4x4;",
+        "    // Transpose logic here",
+        "    return result;",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "@lib/math/vector.wgsl.template",
+      "content": [
+        "// Vector operations",
+        "fn dot_product(a: vec3<f32>, b: vec3<f32>) -> f32 {",
+        "    return a.x * b.x + a.y * b.y + a.z * b.z;",
+        "}",
+        "",
+        "fn cross_product(a: vec3<f32>, b: vec3<f32>) -> vec3<f32> {",
+        "    return vec3<f32>(",
+        "        a.y * b.z - a.z * b.y,",
+        "        a.z * b.x - a.x * b.z,",
+        "        a.x * b.y - a.y * b.x",
+        "    );",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "@lib/graphics/color.wgsl.template",
+      "content": [
+        "// Color utilities",
+        "struct Color {",
+        "    r: f32,",
+        "    g: f32,",
+        "    b: f32,",
+        "    a: f32,",
+        "}",
+        "",
+        "fn rgb_to_hsv(color: Color) -> vec3<f32> {",
+        "    // RGB to HSV conversion",
+        "    return vec3<f32>(0.0);",
+        "}",
+        "",
+        "fn blend_colors(a: Color, b: Color, factor: f32) -> Color {",
+        "    return Color(",
+        "        mix(a.r, b.r, factor),",
+        "        mix(a.g, b.g, factor),",
+        "        mix(a.b, b.b, factor),",
+        "        mix(a.a, b.a, factor)",
+        "    );",
+        "}",
+        ""
+      ]
+    },
+    {
+      "path": "@lib/graphics/texture.wgsl.template",
+      "content": [
+        "// Texture sampling utilities",
+        "fn sample_texture_bilinear(texture: texture_2d<f32>, sampler: sampler, uv: vec2<f32>) -> vec4<f32> {",
+        "    return textureSample(texture, sampler, uv);",
+        "}",
+        "",
+        "fn sample_texture_with_lod(texture: texture_2d<f32>, sampler: sampler, uv: vec2<f32>, lod: f32) -> vec4<f32> {",
+        "    return textureSampleLevel(texture, sampler, uv, lod);",
+        "}",
+        ""
+      ]
+    }
+  ]
+}

@@ -10,14 +10,29 @@ import type { TemplateRepository, TemplatePass0, TemplatePass1, TemplatePass2 } 
 // Export error types
 export * from "./errors.js";
 
+// Export types
+export type {
+  TemplateRepository,
+  TemplatePass0,
+  TemplatePass1,
+  TemplatePass2,
+  LoadFromDirectoryOptions,
+} from "./types.js";
+
+// Export loader functions
+export { loader } from "./loader-impl.js";
+
 /**
  * Options for the build process.
  */
 export interface BuildOptions {
   /**
-   * The source root directory containing the source templates.
+   * Multiple source directories containing the source templates.
+   * Can be strings (directory paths) or objects with path and optional alias.
+   * When using aliases, template names will be prefixed with the alias.
    */
-  sourceDir: string;
+  sourceDirs: ({ path: string; alias?: string } | string)[];
+
   /**
    * The output directory where the generated files will be written.
    */
@@ -86,7 +101,14 @@ export const build = async (options: BuildOptions): Promise<BuildResult> => {
   let files: TemplateRepository<string> | undefined;
 
   try {
-    pass0 = await loader.loadFromDirectory(options.sourceDir, { ext: options.templateExt });
+    // Validate that sourceDirs is provided
+    if (!options.sourceDirs || options.sourceDirs.length === 0) {
+      throw new WgslTemplateBuildError("sourceDirs must be provided and cannot be empty", "invalid-options", {});
+    }
+
+    // Load templates using the multi-directory loader
+    pass0 = await loader.loadFromDirectories(options.sourceDirs, { ext: options.templateExt });
+
     pass1 = parser.parse(pass0);
 
     const codeGenerator = resolveCodeGenerator(options.generator);
