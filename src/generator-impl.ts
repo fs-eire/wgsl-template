@@ -448,16 +448,24 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
 
         for (const param of params) {
           const pattern = createParamPattern(param);
-          if (
-            patterns.filter((p) => p.type === "param").some((p) => p.pattern.toString() === pattern.pattern.toString())
-          ) {
-            throw new WgslTemplateGenerateError(
-              `Duplicate param: ${param} at line ${currentLine + 1}`,
-              "parameter-type-mismatch",
-              { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
-            );
+          // Allow duplicates if same (including same implied type), but error on type mismatch when types are specified.
+          const existing = patterns.find(
+            (p) => p.type === "param" && p.pattern.toString() === pattern.pattern.toString()
+          );
+          if (!existing) {
+            patterns.push(pattern);
+          } else {
+            const existingType = existing.paramType || "int";
+            const newType = pattern.paramType || "int";
+            if (existingType !== newType) {
+              throw new WgslTemplateGenerateError(
+                `Duplicate param with different type: ${param} at line ${currentLine + 1}`,
+                "parameter-type-mismatch",
+                { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
+              );
+            }
+            // otherwise silently ignore duplicate
           }
-          patterns.push(pattern);
         }
       } else if (line.startsWith("#if ")) {
         if (currentFunctionCall.length > 0) {
