@@ -1,8 +1,0 @@
-#param BUFFER_SIZE
-#param WORKGROUP_SIZE
-#param BUFFER_SIZE
-
-fn test_function() {
-    let size = BUFFER_SIZE;
-    let workgroup = WORKGROUP_SIZE;
-}
