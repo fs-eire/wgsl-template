@@ -59,6 +59,14 @@ export async function displaySourceContext(
       // For generator errors, use pass1 but map each parsed line back to its original raw source line
       const template = result.pass1.templates.get(filePath);
       if (template) {
+        const errorLine = template.pass1[lineNumber - 1];
+        if (errorLine.codeReference.filePath !== filePath) {
+          console.error(`   Original File: ${errorLine.codeReference.filePath}`);
+        }
+        if (errorLine.codeReference.filePath !== filePath || errorLine.codeReference.lineNumber !== lineNumber) {
+          console.error(`   Original Line: ${errorLine.codeReference.lineNumber}`);
+        }
+
         content = template.pass1
           .map((pl) => {
             const original = result.pass0?.templates.get(pl.codeReference.filePath)?.raw[
