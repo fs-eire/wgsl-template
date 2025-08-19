@@ -413,7 +413,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
     }
 
     if (line.trim().startsWith("#")) {
-      const trimmedLine = line.trim();
+      const trimmedLine = line.trimStart();
       if (trimmedLine.startsWith("#use ")) {
         const uses = trimmedLine
           .slice(5)
@@ -487,7 +487,8 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
           );
         }
 
-        currentColumn = 4;
+        const leadingWhitespaceLength = line.length - trimmedLine.length;
+        currentColumn = leadingWhitespaceLength + 4; // Account for leading whitespace + "#if "
         preprocessIfStack.push(["if", currentParenthesesState, currentBracketState, null, null]);
         output("raw", "if (");
         currentPreProcessorExpression = [];
@@ -562,7 +563,8 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
           );
         }
 
-        currentColumn = 6;
+        const leadingWhitespaceLength = line.length - trimmedLine.length;
+        currentColumn = leadingWhitespaceLength + 6; // Account for leading whitespace + "#elif "
         preprocessIfStack[preprocessIfStack.length - 1][0] = "elif";
         output("raw", "} else if (");
         currentPreProcessorExpression = [];
