@@ -412,9 +412,10 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
       previousLineWasEmpty = false;
     }
 
-    if (line.startsWith("#")) {
-      if (line.startsWith("#use ")) {
-        const uses = line
+    if (line.trim().startsWith("#")) {
+      const trimmedLine = line.trim();
+      if (trimmedLine.startsWith("#use ")) {
+        const uses = trimmedLine
           .slice(5)
           .split(" ")
           .filter((s) => s.trim())
@@ -430,8 +431,8 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
           }
           patterns.push(pattern);
         }
-      } else if (line.startsWith("#param ")) {
-        const params = line
+      } else if (trimmedLine.startsWith("#param ")) {
+        const params = trimmedLine
           .slice(7)
           .split(" ")
           .filter((s) => s.trim())
@@ -467,7 +468,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
             // otherwise silently ignore duplicate
           }
         }
-      } else if (line.startsWith("#if ")) {
+      } else if (trimmedLine.startsWith("#if ")) {
         if (currentFunctionCall.length > 0) {
           throw new WgslTemplateGenerateError(
             `Preprocessor directive inside function call at line ${currentLine + 1}`,
@@ -477,7 +478,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         }
 
         // Check if there's a condition after #if
-        const condition = line.slice(4).trim();
+        const condition = trimmedLine.slice(4).trim();
         if (condition.length === 0) {
           throw new WgslTemplateGenerateError(
             `Empty condition in #if directive at line ${currentLine + 1}`,
@@ -511,7 +512,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         generatorState.result.push(...currentPreProcessorExpression);
         currentPreProcessorExpression = null;
         output("raw", ") {\n");
-      } else if (line.startsWith("#elif ")) {
+      } else if (trimmedLine.startsWith("#elif ")) {
         if (
           preprocessIfStack.length === 0 ||
           (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
@@ -552,7 +553,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         currentBracketState = preprocessIfStack[preprocessIfStack.length - 1][2]; // Reset bracket state to the initial state of the current block
 
         // Check if there's a condition after #elif
-        const condition = line.slice(6).trim();
+        const condition = trimmedLine.slice(6).trim();
         if (condition.length === 0) {
           throw new WgslTemplateGenerateError(
             `Empty condition in #elif directive at line ${currentLine + 1}`,
@@ -586,7 +587,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         generatorState.result.push(...currentPreProcessorExpression);
         currentPreProcessorExpression = null;
         output("raw", ") {\n");
-      } else if (line.startsWith("#else")) {
+      } else if (trimmedLine.startsWith("#else")) {
         if (
           preprocessIfStack.length === 0 ||
           (preprocessIfStack[preprocessIfStack.length - 1][0] !== "if" &&
@@ -626,7 +627,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         currentParenthesesState = preprocessIfStack[preprocessIfStack.length - 1][1]; // Reset parentheses state to the initial state of the current block
         currentBracketState = preprocessIfStack[preprocessIfStack.length - 1][2]; // Reset bracket state to the initial state of the current block
 
-        if (line.substring(5).trim() !== "") {
+        if (trimmedLine.substring(5).trim() !== "") {
           throw new WgslTemplateGenerateError(
             `Unexpected content after #else at line ${currentLine + 1}`,
             "code-generation-failed",
@@ -635,7 +636,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         }
         preprocessIfStack[preprocessIfStack.length - 1][0] = "else";
         output("raw", "} else {\n");
-      } else if (line.startsWith("#endif")) {
+      } else if (trimmedLine.startsWith("#endif")) {
         if (preprocessIfStack.length === 0) {
           throw new WgslTemplateGenerateError(`#endif mismatch at line ${currentLine + 1}`, "code-generation-failed", {
             lineNumber: currentLine + 1,
@@ -667,7 +668,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
           );
         }
 
-        if (line.substring(6).trim() !== "") {
+        if (trimmedLine.substring(6).trim() !== "") {
           throw new WgslTemplateGenerateError(
             `Unexpected content after #endif at line ${currentLine + 1}`,
             "code-generation-failed",
@@ -677,7 +678,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         output("raw", "}\n");
         preprocessIfStack.pop();
       } else {
-        if (["#use", "#param", "#if", "#elif"].includes(line)) {
+        if (["#use", "#param", "#if", "#elif"].includes(trimmedLine)) {
           throw new WgslTemplateGenerateError(
             `Missing content after preprocessor directive at line ${currentLine + 1}`,
             "code-generation-failed",
@@ -686,7 +687,7 @@ function generateImpl(generatorState: GeneratorState, options: GenerateOptions) 
         } else {
           // Handle unknown preprocessor directive
           throw new WgslTemplateGenerateError(
-            `Unknown preprocessor directive: ${line} at line ${currentLine + 1}`,
+            `Unknown preprocessor directive: ${trimmedLine} at line ${currentLine + 1}`,
             "code-generation-failed",
             { filePath: generatorState.filePath, lineNumber: currentLine + 1 }
           );

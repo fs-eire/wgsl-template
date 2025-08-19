@@ -1,0 +1,7 @@
+emit("fn test_function(value: f32) -> f32 {\n");
+if ( param["ENABLE_FEATURE"]) {
+emit("    return value * 2.0;\n");
+} else {
+emit("    return value;\n");
+}
+emit("}\n");
