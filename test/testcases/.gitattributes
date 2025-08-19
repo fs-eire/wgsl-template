@@ -1,2 +1,2 @@
-# Preserve line endings for expectation files
-**/expected/
+# Preserve line endings for test expectation files
+**/expected/** text eol=lf
