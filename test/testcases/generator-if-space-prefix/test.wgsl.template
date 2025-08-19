@@ -1,0 +1,9 @@
+#param ENABLE_FEATURE
+
+fn test_function(value: f32) -> f32 {
+ #if ENABLE_FEATURE
+    return value * 2.0;
+ #else
+    return value;
+ #endif
+}

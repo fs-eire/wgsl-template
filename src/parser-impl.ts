@@ -91,7 +91,7 @@ function parsePreprocessorIncludeDirectives(includeStack: string[], parseState: 
     const parsedLine = currentState.lines[lineNumber];
     const line = parsedLine.line;
     // Process each line and extract include directives
-    const includeMatch = line.match(/^#include\s+(.+)$/);
+    const includeMatch = line.match(/^\s*#include\s+(.+)$/);
     if (includeMatch) {
       const includeParam = includeMatch[1].trim();
       if (!(includeParam.startsWith('"') && includeParam.endsWith('"'))) {
@@ -154,10 +154,10 @@ function parseMacroDirectives(lines: ParsedLine[], fileName: string): ParsedLine
 
     // Check for malformed #define directives
     if (line.trim().startsWith("#define ")) {
-      const defineMatch = line.match(/^#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+(.+)$/);
+      const defineMatch = line.match(/^\s*#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s+(.+)$/);
       if (!defineMatch) {
         // Check specific error cases
-        const emptyValueMatch = line.match(/^#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
+        const emptyValueMatch = line.match(/^\s*#define\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*$/);
         if (emptyValueMatch) {
           throw new WgslTemplateParseError(
             `Invalid macro definition in file ${fileName} at line ${
@@ -168,7 +168,7 @@ function parseMacroDirectives(lines: ParsedLine[], fileName: string): ParsedLine
           );
         }
 
-        const invalidNameMatch = line.match(/^#define\s+(\S+)(?:\s+(.+))?$/);
+        const invalidNameMatch = line.match(/^\s*#define\s+(\S+)(?:\s+(.+))?$/);
         if (invalidNameMatch) {
           throw new WgslTemplateParseError(
             `Invalid macro definition in file ${fileName} at line ${

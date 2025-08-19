@@ -1,0 +1,11 @@
+{
+  "type": "generator",
+  "description": "Test #if directive with space at the beginning of line",
+  "entries": {
+    "test.wgsl.template": {
+      "generators": {
+        "dynamic": {}
+      }
+    }
+  }
+}
